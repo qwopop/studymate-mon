@@ -80,6 +80,42 @@ def describe(name: str, value: float, increases_risk: bool) -> str:
     return f"{LABELS.get(name, name)}: {v:.1f}"
 
 
+def describe_helping(name: str, value: float) -> str:
+    """One plain sentence for a factor that keeps the risk low."""
+    v = float(value)
+    n = int(round(v))
+    if name == "attendance_pct":
+        return f"Attendance is {v:.0f}%" + (": you have not missed classes" if v >= 99.5 else "")
+    if name == "max_absence_pct":
+        return "No course has any absences" if v < 0.5 else f"Your worst course has only {v:.0f}% absence (the FX limit is {ABSENCE_LIMIT_PCT:.0f}%)"
+    if name == "absent_hours":
+        return "No missed class hours" if n == 0 else f"Only {n} missed class hour{'s' if n != 1 else ''}"
+    if name == "pending_hours":
+        return "No 'Not submitted' hours waiting for the teacher" if n == 0 else f"Only {n} 'Not submitted' hour{'s' if n != 1 else ''}"
+    if name == "avg_grade":
+        return f"Average grade is {v:.0f}%"
+    if name == "min_grade":
+        return f"Even your weakest course is at {v:.0f}%"
+    if name == "grade_trend":
+        return f"Grades are rising by {v:.1f} points per term" if v > 0 else "Grades are stable"
+    if name == "missed_deadlines":
+        return "No missed deadlines" if n == 0 else f"Only {n} missed deadline{'s' if n != 1 else ''}"
+    if name == "low_grade_courses":
+        return "No course below the 60% pass mark" if n == 0 else f"Only {n} course{'s' if n != 1 else ''} below the pass mark"
+    return f"{LABELS.get(name, name)}: {v:.1f}"
+
+
+def summarize(risk_percent: int, level: str, reasons: list, helping: list, fx: bool = False) -> str:
+    """The explanation in one or two sentences."""
+    if reasons:
+        top = reasons[0]["text"].rstrip(".")
+        second = reasons[1]["text"].rstrip(".") if len(reasons) > 1 else ""
+        extra = f" Also: {second[0].lower() + second[1:]}." if second and not second.startswith(("SDU", "FX")) else (f" Also: {second}." if second else "")
+        return f"Your risk is {risk_percent}% ({level}), mainly because {top[0].lower() + top[1:]}.{extra}"
+    kept = f" This is because {helping[0]['text'][0].lower() + helping[0]['text'][1:]}." if helping else ""
+    return f"Your risk is {risk_percent}% ({level}): no factor is pushing it up right now.{kept}"
+
+
 def risk_level(risk: float) -> str:
     return "high" if risk >= 0.5 else "medium" if risk >= 0.25 else "low"
 

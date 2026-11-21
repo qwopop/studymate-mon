@@ -208,3 +208,12 @@ def test_simulation_curve_never_improves_when_skipping_more():
         assert risks == sorted(risks) and gpas == sorted(gpas, reverse=True)
         assert sim["curve"][0]["risk"] == sim["before"]["risk"]
         assert sim["risk_change"] >= 0 and sim["gpa_change"] <= 0
+
+
+def test_risk_is_explained_in_words_for_low_and_high_risk():
+    low = mon.score(mon.build_features([COURSES[1]], [92, 88], 1, 0, current_gpa=3.5))
+    assert low["summary"] and low["helping"] and "no factor is pushing it up" in low["summary"] or low["reasons"]
+    assert all(h["impact"] < 0 for h in low["helping"])
+    high = mon.add_course_detail(mon.score(mon.build_features(COURSES, [72, 65], -2, 1)), COURSES)
+    assert high["summary"].startswith(f"Your risk is {high['risk_percent']}%") and "mainly because" in high["summary"]
+    assert "INF 451" in high["summary"] or len(high["reasons"]) > 0

@@ -6,7 +6,7 @@ from typing import Optional
 
 import numpy as np
 
-from .features import FEATURES, LABELS, clamp, complete, describe, risk_level, vector
+from .features import FEATURES, LABELS, clamp, complete, describe, describe_helping, risk_level, summarize, vector
 
 _lock = threading.Lock()
 _bundle: Optional[dict] = None
@@ -104,8 +104,17 @@ def predict(features: dict, top: int = 3) -> dict:
             "impact": round(float(contributions[i]) * 100, 1),          # percentage points of risk
             "text": describe(name, full[name], True),
         })
-    return {"risk": round(risk, 4), "risk_percent": round(risk * 100), "level": risk_level(risk),
-            "predicted_gpa": round(gpa, 2), "gpa_basis": gpa_basis, "reasons": reasons,
+    helping = []
+    for i in order[::-1]:                                   # most risk-lowering first
+        if contributions[i] >= -0.004 or len(helping) >= top:
+            continue
+        name = FEATURES[i]
+        helping.append({"feature": name, "label": LABELS[name], "value": round(full[name], 2),
+                        "impact": round(float(contributions[i]) * 100, 1), "text": describe_helping(name, full[name])})
+    level = risk_level(risk)
+    return {"risk": round(risk, 4), "risk_percent": round(risk * 100), "level": level,
+            "summary": summarize(round(risk * 100), level, reasons, helping),
+            "predicted_gpa": round(gpa, 2), "gpa_basis": gpa_basis, "reasons": reasons, "helping": helping,
             "model_version": bundle["version"], "explainer": explainer}
 
 

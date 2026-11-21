@@ -17,7 +17,7 @@ import os
 from typing import Optional
 
 from .ml import model as ml
-from .ml.features import ABSENCE_LIMIT_PCT, describe, risk_level
+from .ml.features import ABSENCE_LIMIT_PCT, describe, risk_level, summarize
 
 EPS = 1e-9
 WARN_BUFFER = 2                       # this many hours (or fewer) left before FX -> yellow
@@ -163,8 +163,10 @@ def score(features: dict) -> dict:
                                   "value": features["max_absence_pct"], "impact": 0.0,
                                   "text": describe("max_absence_pct", features["max_absence_pct"], True)},
                                  *result["reasons"]][:3]
+        result["helping"] = [h for h in result["helping"] if h["feature"] not in ("attendance_pct", "max_absence_pct", "absent_hours")]
     else:
         result["fx"] = False
+    result["summary"] = summarize(result["risk_percent"], result["level"], result["reasons"], result["helping"])
     return result
 
 
@@ -181,6 +183,7 @@ def add_course_detail(result: dict, courses: list[dict]) -> dict:
             top = max(courses, key=lambda c: c["absent"] / c["hours"])
             reason["course"] = top["code"] or top["name"]
             reason["text"] += f" in {reason['course']}"
+    result["summary"] = summarize(result["risk_percent"], result["level"], result["reasons"], result["helping"])   # now names the course
     return result
 
 

@@ -78,3 +78,7 @@
   .mon-widget-side { align-items: flex-start; text-align: left; }
 }
 @media (prefers-reduced-motion: reduce) { .mon-bar-fill { transition: none; } }
+
+.mon-summary { margin: 14px 0 0; font-size: 14.5px; line-height: 1.55; color: var(--text-primary); }
+.mon-helping li b { color: var(--success); }
+.mon-helping .mon-reason-bar i { background: var(--success); }

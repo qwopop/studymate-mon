@@ -109,9 +109,10 @@ function RiskCard({ risk, history }) {
         </div>
         <Pill tone={RISK_TONE[risk.level]}>{risk.level[0].toUpperCase() + risk.level.slice(1)} risk{risk.fx ? ' · FX' : ''}</Pill>
       </div>
+      {risk.summary && <p className="mon-summary">{risk.summary}</p>}
       {risk.reasons.length > 0 && (
         <>
-          <h3 className="mon-sub">Why (top {risk.reasons.length} reasons)</h3>
+          <h3 className="mon-sub">Pushing your risk up (top {risk.reasons.length})</h3>
           <ul className="mon-reasons">
             {risk.reasons.map(r => (
               <li key={r.feature}>
@@ -121,9 +122,23 @@ function RiskCard({ risk, history }) {
               </li>
             ))}
           </ul>
-          <p className="footnote">Reasons come from SHAP: how much each factor moved your risk up. Points are percentage points of risk.</p>
         </>
       )}
+      {risk.helping?.length > 0 && (
+        <>
+          <h3 className="mon-sub">What is helping you</h3>
+          <ul className="mon-reasons mon-helping">
+            {risk.helping.map(r => (
+              <li key={r.feature}>
+                <span>{r.text}</span>
+                <span className="mon-reason-bar"><i style={{ width: `${Math.max(6, (Math.abs(r.impact) / Math.max(1, ...risk.helping.map(h => Math.abs(h.impact)))) * 100)}%` }} /></span>
+                <b>{r.impact} pts</b>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+      <p className="footnote">Explained with SHAP: how many percentage points each factor adds to (red) or takes off (green) your risk.</p>
       {trend.length >= 2 && (
         <div className="mon-trend" aria-label="Risk over time">
           <h3 className="mon-sub">Risk over time</h3>
