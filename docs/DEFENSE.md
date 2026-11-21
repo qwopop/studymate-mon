@@ -34,7 +34,8 @@ Tests that show care for the risky parts: `test_sdu_password_is_found_nowhere_in
 ### Be honest about these (a strict examiner will find them)
 1. **Do not say "1000 synthetic records".** The current model is trained on **real public data**, not on SDU data. It is a stand-in until SDU records are available (`--csv` retrains on them, 200+ students).
 2. **Do not say "no hardcoded rules".** The 30% FX limit, the Safe-to-Skip limits and the alert wording are deliberate **rules**, because SDU's regulations are rules. The model handles the part that is genuinely statistical.
-3. **The model mostly learned grades.** In the public data, absences barely change the outcome and there is nothing like "Not submitted" hours or deadlines, so those two factors are constant (0) and the model ignores them. Their effect comes from the rule layer. (The earlier synthetic model did use them, but on made-up data.)
+3. **The model mostly learned grades; absences come from a rule.** The simulator's response to skipped classes is an SDU-rule layer on top of the model (`attendance_pressure`, with "Not submitted" hours counting as half an absence), shown in the explanation as "Absence limit used". Say so.
+   Earlier note, kept for context: **The model mostly learned grades.** In the public data, absences barely change the outcome and there is nothing like "Not submitted" hours or deadlines, so those two factors are constant (0) and the model ignores them. Their effect comes from the rule layer. (The earlier synthetic model did use them, but on made-up data.)
 4. The public data is from Portuguese secondary schools; rows are mapped with documented assumptions (`ml/public_data.py` header).
 5. High scores are partly expected: the early-period grades (G1, G2) predict the final grade well. G3 is never a feature.
 

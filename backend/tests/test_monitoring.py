@@ -289,3 +289,36 @@ def test_model_warm_up_runs_in_the_background_and_never_raises(monkeypatch):
     for t in threading.enumerate():
         if t.name == "model-warm-up":
             t.join(5)
+
+
+ONE_COURSE = [{"code": "INF 451", "name": "Project management information system", "hours": 30, "present": 14,
+               "absent": 0, "permitted": 0, "pending": 0, "remaining": 16}]
+
+
+def test_skipping_classes_moves_risk_and_gpa_well_before_the_fx_limit():
+    sim = mon.simulate(ONE_COURSE, [75], 0, 0, lectures=2, practices=1, course_code="INF 451", current_gpa=2.67)
+    assert sim["risk_change"] >= 10 and sim["gpa_change"] <= -0.1                    # 3 of 8 allowed hours: clearly visible
+    risks = [p["risk"] for p in sim["curve"]]
+    gpas = [p["predicted_gpa"] for p in sim["curve"]]
+    assert risks == sorted(risks) and gpas == sorted(gpas, reverse=True)
+    assert risks[0] < 0.05 and risks[8] >= 0.8 and not sim["curve"][8]["fx"]            # 8 hours = the last allowed one
+    assert sim["curve"][9]["fx"] and risks[9] >= 0.9 and gpas[8] - gpas[9] >= 0.3       # the 9th hour is FX: a clear drop
+    assert len({round(r, 2) for r in risks[:8]}) == 8                                   # rises step by step, not flat then a jump
+
+
+def test_not_submitted_hours_count_as_half_an_absence_in_the_pressure():
+    absent = [{**ONE_COURSE[0], "absent": 3}]
+    pending = [{**ONE_COURSE[0], "pending": 6}]
+    assert mon.attendance_pressure(absent) == mon.attendance_pressure(pending) == pytest.approx(3 / 8, abs=1e-3)
+    assert mon.score(mon.build_features(pending, [75], 0, 0, 2.67))["risk"] > mon.score(mon.build_features(ONE_COURSE, [75], 0, 0, 2.67))["risk"]
+
+
+def test_absence_pressure_is_named_as_a_reason_for_the_risk():
+    cs = [{**ONE_COURSE[0], "absent": 5}]
+    result = mon.add_course_detail(mon.score(mon.build_features(cs, [75], 0, 0, 2.67)), cs)
+    assert result["reasons"][0]["feature"] == "attendance_pressure" and "62%" in result["reasons"][0]["text"]
+    assert "absences allowed before FX" in result["summary"]
+
+
+def test_simulation_message_rounds_gpa_half_up_like_the_screen():
+    assert "New predicted GPA: 2.3." in mon._sim_message({"predicted_gpa": 2.25, "risk_percent": 10}, 1, [])
