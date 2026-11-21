@@ -2127,7 +2127,7 @@ function ComingUpCard({ nextInfo, scheduleFailed, deadlines, onOpenSchedule, onO
 
 function AttentionCard({ items, onSelect }) {
   return (
-    <article className="card card-fill">
+    <article className="card card-fill attention-card">
       <header className="card-head">
         <h2>Needs attention</h2>
         {items.length > 0 && <span className="count-pill">{items.length}</span>}
