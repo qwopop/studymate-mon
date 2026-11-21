@@ -31,8 +31,8 @@
   --blue:     #5D8BFF;
   --purple-grad: linear-gradient(135deg, #7138E8 0%, #9B5CFF 100%);
 
-  --sidebar-bg: rgba(255, 255, 255, 0.80);
-  --card-bg:    rgba(255, 255, 255, 0.90);
+  --sidebar-bg: rgba(255, 255, 255, 0.92);
+  --card-bg:    rgba(255, 255, 255, 0.94);
   --card-edge:  rgba(233, 229, 243, 0.95);
 
   --shadow-sm:  0 1px 2px rgba(25, 21, 43, 0.04);
@@ -75,7 +75,7 @@
   --neutral-soft:  rgba(138, 132, 168, 0.18);
 
   --sidebar-bg: #100D24;
-  --card-bg:    rgba(25, 20, 48, 0.78);
+  --card-bg:    rgba(25, 20, 48, 0.88);
   --card-edge:  rgba(155, 92, 255, 0.16);
 
   --shadow-sm:  none;
@@ -84,31 +84,32 @@
 }
 
 /* ─── Layered background ────────────────────────────────────── */
-/* Light: lavender base, a pale swoosh behind the title, purple-pink-lavender waves in the lower-right corner */
-body {
-  background: linear-gradient(165deg, #F3F1FC 0%, #F5F4FB 55%, #F7F4FC 100%);
-  background-attachment: fixed;
-}
+/* Performance: every decorative layer lives in ONE fixed pseudo-element that is promoted to its own GPU layer,
+   so scrolling never repaints it (no background-attachment: fixed, no blur filters). */
+body { background: #F5F4FB; }
+[data-theme="dark"] body { background: #0B0918; }
 body::before {
   content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  transform: translateZ(0); will-change: transform; contain: strict;
+  /* Light: lavender base, a pale swoosh behind the title, purple-pink-lavender waves in the lower-right corner */
+  background-color: #F5F4FB;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 520'%3E%3Cdefs%3E%3ClinearGradient id='a' x1='0' y1='1' x2='1' y2='0'%3E%3Cstop offset='0' stop-color='%23CDBFFF' stop-opacity='0'/%3E%3Cstop offset='0.5' stop-color='%23BBA8FF' stop-opacity='0.40'/%3E%3Cstop offset='1' stop-color='%23AD90FF' stop-opacity='0.62'/%3E%3C/linearGradient%3E%3ClinearGradient id='b' x1='0' y1='1' x2='1' y2='0'%3E%3Cstop offset='0' stop-color='%23B79CFF' stop-opacity='0'/%3E%3Cstop offset='0.5' stop-color='%23A07EFF' stop-opacity='0.50'/%3E%3Cstop offset='1' stop-color='%23E88CE8' stop-opacity='0.78'/%3E%3C/linearGradient%3E%3ClinearGradient id='c' x1='0' y1='1' x2='1' y2='0'%3E%3Cstop offset='0' stop-color='%23C9A4FF' stop-opacity='0'/%3E%3Cstop offset='0.6' stop-color='%23D58EF2' stop-opacity='0.55'/%3E%3Cstop offset='1' stop-color='%23F6A6E8' stop-opacity='0.85'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M0 520 C260 470 470 360 700 380 C900 398 1040 300 1200 170 L1200 520 Z' fill='url(%23a)'/%3E%3Cpath d='M280 520 C480 490 660 440 820 432 C980 424 1100 350 1200 250 L1200 520 Z' fill='url(%23b)'/%3E%3Cpath d='M600 520 C760 505 900 480 1010 462 C1100 448 1160 410 1200 370 L1200 520 Z' fill='url(%23c)'/%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 900 300'%3E%3Cdefs%3E%3ClinearGradient id='s' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23B9A8FF' stop-opacity='0.40'/%3E%3Cstop offset='1' stop-color='%23D8CEFF' stop-opacity='0.04'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M0 0 H900 C770 38 610 118 430 148 C270 174 120 148 0 224 Z' fill='url(%23s)'/%3E%3C/svg%3E"), radial-gradient(900px 520px at 0% 0%, rgba(155, 128, 255, 0.14), transparent 62%);
   background-repeat: no-repeat;
   background-position: right bottom, left top, 0 0;
   background-size: min(80vw, 1150px) auto, min(80vw, 1000px) auto, auto;
 }
 /* Dark: deep navy with purple (upper-left) and magenta (lower-right) corner light */
-[data-theme="dark"] body {
-  background:
+[data-theme="dark"] body::before {
+  background-color: #0B0918;
+  background-image:
     radial-gradient(1000px 640px at 0% 0%, rgba(113, 56, 232, 0.30), transparent 62%),
     radial-gradient(900px 620px at 100% 100%, rgba(193, 92, 255, 0.22), transparent 64%),
     radial-gradient(560px 380px at 100% 0%, rgba(93, 139, 255, 0.07), transparent 70%),
-    #0B0918;
-  background-attachment: fixed;
-}
-[data-theme="dark"] body::before {
-  background:
     radial-gradient(ellipse 55% 26% at 108% 72%, rgba(193, 92, 255, 0.13), transparent 70%),
     radial-gradient(ellipse 45% 22% at -8% 88%, rgba(113, 56, 232, 0.16), transparent 70%);
+  background-repeat: no-repeat;
+  background-position: 0 0;
+  background-size: auto;
 }
 
 /* ─── Typography ────────────────────────────────────────────── */
@@ -122,7 +123,7 @@ body { font-size: 14px; }
 .metric-label { font-size: 13px; }
 
 /* ─── Sidebar ───────────────────────────────────────────────── */
-.sidebar { background: var(--sidebar-bg); border-right: 1px solid var(--border); padding: 22px 14px 16px; -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+.sidebar { background: var(--sidebar-bg); border-right: 1px solid var(--border); padding: 22px 14px 16px; }
 .brand-mark, [data-theme="dark"] .brand-mark { background: var(--purple-grad); color: #fff; border-radius: 11px; }
 .side-link { height: 40px; border-radius: 12px; font-size: 14px; }
 .side-link:hover { background: var(--accent-soft); color: var(--text-primary); }
@@ -140,16 +141,10 @@ body { font-size: 14px; }
 
 /* ─── Cards (glass in dark) ─────────────────────────────────── */
 .card {
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
   background: var(--card-bg);
   border: 1px solid var(--card-edge);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
-}
-[data-theme="dark"] .card {
-  -webkit-backdrop-filter: blur(10px) saturate(120%);
-  backdrop-filter: blur(10px) saturate(120%);
 }
 .group-head, .card-foot { border-color: var(--border); }
 

@@ -272,3 +272,20 @@ def test_env_file_is_loaded_but_never_overrides_real_variables(tmp_path, monkeyp
     import os
     assert os.environ["STUDYMATE_FROM_FILE"] == "file" and os.environ["STUDYMATE_ALREADY_SET"] == "real"
     monkeypatch.delenv("STUDYMATE_FROM_FILE")
+
+
+def test_model_warm_up_runs_in_the_background_and_never_raises(monkeypatch):
+    calls = []
+    monkeypatch.setattr(monitoring_api.ml, "load", lambda *a, **k: calls.append("load"))
+    monkeypatch.setattr(monitoring_api.ml, "predict", lambda *a, **k: calls.append("predict"))
+    monitoring_api.warm_up_model()
+    import threading
+    for t in threading.enumerate():
+        if t.name == "model-warm-up":
+            t.join(5)
+    assert calls == ["load", "predict"]
+    monkeypatch.setattr(monitoring_api.ml, "load", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("boom")))
+    monitoring_api.warm_up_model()                       # a failing warm-up must not break startup
+    for t in threading.enumerate():
+        if t.name == "model-warm-up":
+            t.join(5)

@@ -190,6 +190,20 @@ def run_scheduled_alerts() -> dict:
     return {"students": len(students), "sent": sent}
 
 
+def warm_up_model() -> None:
+    """Load the model and SHAP in the background when the server starts.
+
+    The first prediction otherwise pays for importing scikit-learn/SHAP and building the explainer
+    (seconds on a laptop), which made the first sync or the first Overview feel slow."""
+    def work() -> None:
+        try:
+            ml.load()
+            ml.predict({})            # builds the SHAP explainer too
+        except Exception:
+            log.exception("model warm-up failed (it will load on first use instead)")
+    threading.Thread(target=work, name="model-warm-up", daemon=True).start()
+
+
 _scheduler = None
 
 
@@ -220,7 +234,7 @@ def build_router(*, repo, current_user: Callable, require_role: Callable, grades
     _env.update(repo=repo, grades=grades, fallback_sender=fallback_sender)
     store.ensure(repo)
     # Registers the "Authorize" button in /docs (paste the access_token); real checking stays in current_user
-    router = APIRouter(on_startup=[start_scheduler], on_shutdown=[stop_scheduler], tags=["Monitoring & AI"],
+    router = APIRouter(on_startup=[warm_up_model, start_scheduler], on_shutdown=[stop_scheduler], tags=["Monitoring & AI"],
                        dependencies=[Security(HTTPBearer(auto_error=False))])
     student = Depends(require_role("student"))
 
