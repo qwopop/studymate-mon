@@ -65,11 +65,15 @@ def load_csv(path: str) -> tuple[np.ndarray, np.ndarray, "np.ndarray | None"]:
     return X, y, (gpa if not np.isnan(gpa).any() else None)
 
 
-def train(rows: int = 1000, seed: int = 42, save: bool = True, csv_path: "str | None" = None) -> dict:
+def train(rows: int = 1000, seed: int = 42, save: bool = True, csv_path: "str | None" = None, public: bool = False) -> dict:
     X, y, gpa = generate(rows, seed)
     source = "synthetic"
     gpa_source = "synthetic"
-    if csv_path:
+    if public:
+        from . import public_data
+        X, y, gpa, students = public_data.load()
+        source, gpa_source = f"public:uci-student-performance ({students} real students)", "public"
+    elif csv_path:
         X, y, real_gpa = load_csv(csv_path)
         source = f"real:{Path(csv_path).name}"
         if real_gpa is not None:
@@ -81,13 +85,14 @@ def train(rows: int = 1000, seed: int = 42, save: bool = True, csv_path: "str | 
 
     params = {"n_estimators": 150, "max_depth": 7, "min_samples_leaf": 3, "random_state": seed}
     forest = RandomForestClassifier(**params, class_weight="balanced").fit(X_tr, y_tr)
-    baseline = LogisticRegression(max_iter=2000, class_weight="balanced").fit(
-        (X_tr - X_tr.mean(0)) / X_tr.std(0), y_tr)
+    scale = X_tr.std(0)
+    scale[scale == 0] = 1.0                                # a factor the data never varies (e.g. no deadlines in public data)
+    baseline = LogisticRegression(max_iter=2000, class_weight="balanced").fit((X_tr - X_tr.mean(0)) / scale, y_tr)
     regressor = RandomForestRegressor(n_estimators=120, max_depth=8, min_samples_leaf=3, random_state=seed).fit(X_tr, g_tr)
 
     pred = forest.predict(X_te)
     proba = forest.predict_proba(X_te)[:, 1]
-    base_pred = baseline.predict((X_te - X_tr.mean(0)) / X_tr.std(0))
+    base_pred = baseline.predict((X_te - X_tr.mean(0)) / scale)
     metrics = {
         "data_source": source, "gpa_model_data": gpa_source,
         "accuracy": round(accuracy_score(y_te, pred), 4),
@@ -123,11 +128,12 @@ if __name__ == "__main__":
     parser.add_argument("--rows", type=int, default=1000)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--csv", help="train on real students from this CSV instead of synthetic data")
+    parser.add_argument("--public", action="store_true", help="train on the public UCI Student Performance data (1044 real students)")
     parser.add_argument("--template", action="store_true", help="print an example CSV header and exit")
     args = parser.parse_args()
     if args.template:
         print(template_csv(), end="")
         raise SystemExit(0)
-    result = train(args.rows, args.seed, csv_path=args.csv)
+    result = train(args.rows, args.seed, csv_path=args.csv, public=args.public)
     print(json.dumps(result["metrics"], indent=2))
     print(f"Saved {MODEL_PATH}")

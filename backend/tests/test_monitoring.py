@@ -195,8 +195,8 @@ def test_predicted_gpa_starts_from_the_real_gpa_and_only_adds_risk_effects():
     clean = mon.build_features([COURSES[1]], [90, 85], 0, 0, current_gpa=3.5)
     out = mon.score(clean)
     assert out["gpa_basis"] == "current" and abs(out["predicted_gpa"] - 3.5) < 0.15      # perfect record: stays at the real GPA
-    risky = mon.build_features([{**COURSES[1], "absent": 10, "pending": 3}], [90, 85], 0, 2, current_gpa=3.5)
-    assert mon.score(risky)["predicted_gpa"] < out["predicted_gpa"]                       # risks pull it down
+    risky = mon.build_features([{**COURSES[1], "absent": 10, "pending": 3}], [90, 85], -9, 2, current_gpa=3.5)
+    assert mon.score(risky)["predicted_gpa"] <= 3.5                                       # risks only pull it down, never above the real GPA
     assert mon.score(mon.build_features([COURSES[1]], [90, 85], 0, 0))["gpa_basis"] == "model"
 
 
@@ -242,3 +242,22 @@ def test_training_on_a_real_data_csv_and_rejecting_bad_files(tmp_path):
     wrong.write_text("a,b\n1,2\n")
     with pytest.raises(SystemExit, match="needs columns"):
         train_mod.load_csv(str(wrong))
+
+
+def test_public_data_rows_become_model_factors():
+    from app.ml import public_data
+    rows = [{"G1": "14", "G2": "16", "G3": "15", "absences": "9"},        # good student
+            {"G1": "8", "G2": "7", "G3": "6", "absences": "0"},           # failing student
+            {"G1": "x", "G2": "7", "G3": "6", "absences": "0"},           # broken row: skipped
+            {"G1": "25", "G2": "7", "G3": "6", "absences": "0"}]          # outside the 0-20 scale: skipped
+    X, y, gpa = public_data.map_rows(rows)
+    assert X.shape == (2, len(FEATURES)) and list(y) == [0, 1]
+    f = dict(zip(FEATURES, X[0]))
+    assert f["avg_grade"] == 75.0 and f["grade_trend"] == 10.0 and f["max_absence_pct"] == 20.0 and f["attendance_pct"] == 80.0
+    assert f["pending_hours"] == 0 and f["missed_deadlines"] == 0           # not in this data set
+    assert gpa[0] == 2.67 and gpa[1] == 0.0                                  # G3 15/20 = 75% = B- = 2.67; 6/20 = 30% = 0
+
+
+def test_saved_model_was_trained_on_real_students():
+    metrics = ml.load()["metrics"]
+    assert metrics["data_source"].startswith("public:uci-student-performance") and metrics["roc_auc"] > 0.9

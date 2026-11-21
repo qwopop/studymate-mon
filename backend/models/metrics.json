@@ -1,5 +1,5 @@
 {
-  "version": "20261121-134819",
+  "version": "20261121-143026",
   "params": {
     "n_estimators": 150,
     "max_depth": 7,
@@ -17,15 +17,17 @@
     "missed_deadlines",
     "low_grade_courses"
   ],
-  "accuracy": 0.845,
-  "f1": 0.8187,
-  "precision": 0.8046,
-  "recall": 0.8333,
-  "roc_auc": 0.9246,
-  "gpa_mae": 0.139,
-  "baseline_logreg_accuracy": 0.84,
-  "baseline_logreg_f1": 0.8161,
-  "train_rows": 800,
-  "test_rows": 200,
-  "at_risk_share": 0.422
+  "data_source": "public:uci-student-performance (1044 real students)",
+  "gpa_model_data": "public",
+  "accuracy": 0.9665,
+  "f1": 0.9683,
+  "precision": 0.9386,
+  "recall": 1.0,
+  "roc_auc": 0.9863,
+  "gpa_mae": 0.2467,
+  "baseline_logreg_accuracy": 0.9665,
+  "baseline_logreg_f1": 0.9683,
+  "train_rows": 835,
+  "test_rows": 209,
+  "at_risk_share": 0.511
 }

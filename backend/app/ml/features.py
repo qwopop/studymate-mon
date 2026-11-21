@@ -107,12 +107,12 @@ def describe_helping(name: str, value: float) -> str:
 
 def summarize(risk_percent: int, level: str, reasons: list, helping: list, fx: bool = False) -> str:
     """The explanation in one or two sentences."""
-    if reasons:
+    if reasons and (level != "low" or reasons[0]["impact"] >= 5):
         top = reasons[0]["text"].rstrip(".")
         second = reasons[1]["text"].rstrip(".") if len(reasons) > 1 else ""
         extra = f" Also: {second[0].lower() + second[1:]}." if second and not second.startswith(("SDU", "FX")) else (f" Also: {second}." if second else "")
         return f"Your risk is {risk_percent}% ({level}), mainly because {top[0].lower() + top[1:]}.{extra}"
-    kept = f" This is because {helping[0]['text'][0].lower() + helping[0]['text'][1:]}." if helping else ""
+    kept = f" This is mainly because {helping[0]['text'][0].lower() + helping[0]['text'][1:]}." if helping else ""
     return f"Your risk is {risk_percent}% ({level}): no factor is pushing it up right now.{kept}"
 
 

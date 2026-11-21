@@ -63,6 +63,7 @@ def _occlusion(x: np.ndarray) -> np.ndarray:
     return out
 
 
+MIN_IMPACT = 0.01                       # a factor must move the risk by 1 point to be named
 NEUTRAL = {"attendance_pct": 100.0, "max_absence_pct": 0.0, "absent_hours": 0.0, "pending_hours": 0.0,
            "missed_deadlines": 0.0, "grade_trend": 0.0}
 
@@ -77,7 +78,7 @@ def _gpa(bundle: dict, features: dict) -> tuple[float, str]:
     anchor = features.get("current_gpa")
     if isinstance(anchor, (int, float)) and anchor == anchor:
         neutral = float(bundle["regressor"].predict(np.array([vector({**full, **NEUTRAL})]))[0])
-        return clamp(float(anchor) + (raw - neutral), 0.0, 4.0), "current"
+        return clamp(float(anchor) + min(0.0, raw - neutral), 0.0, 4.0), "current"      # risks only ever lower it
     return clamp(raw, 0.0, 4.0), "model"
 
 
@@ -96,9 +97,9 @@ def predict(features: dict, top: int = 3) -> dict:
     order = np.argsort(contributions)[::-1]
     reasons = []
     for i in order:
-        if contributions[i] <= 0.004 or len(reasons) >= top:
-            continue
         name = FEATURES[i]
+        if contributions[i] <= MIN_IMPACT or len(reasons) >= top or (name == "grade_trend" and full[name] >= 0):
+            continue                                        # too small to matter, or a rising trend is never a reason
         reasons.append({
             "feature": name, "label": LABELS[name], "value": round(full[name], 2),
             "impact": round(float(contributions[i]) * 100, 1),          # percentage points of risk
@@ -106,9 +107,9 @@ def predict(features: dict, top: int = 3) -> dict:
         })
     helping = []
     for i in order[::-1]:                                   # most risk-lowering first
-        if contributions[i] >= -0.004 or len(helping) >= top:
-            continue
         name = FEATURES[i]
+        if contributions[i] >= -MIN_IMPACT or len(helping) >= top or (name == "grade_trend" and full[name] < 0):
+            continue
         helping.append({"feature": name, "label": LABELS[name], "value": round(full[name], 2),
                         "impact": round(float(contributions[i]) * 100, 1), "text": describe_helping(name, full[name])})
     level = risk_level(risk)
