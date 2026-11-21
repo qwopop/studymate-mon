@@ -261,3 +261,14 @@ def test_public_data_rows_become_model_factors():
 def test_saved_model_was_trained_on_real_students():
     metrics = ml.load()["metrics"]
     assert metrics["data_source"].startswith("public:uci-student-performance") and metrics["roc_auc"] > 0.9
+
+
+def test_env_file_is_loaded_but_never_overrides_real_variables(tmp_path, monkeypatch):
+    from app import load_env
+    (tmp_path / ".env").write_text("STUDYMATE_FROM_FILE=file\nSTUDYMATE_ALREADY_SET=file\n")
+    monkeypatch.delenv("STUDYMATE_FROM_FILE", raising=False)
+    monkeypatch.setenv("STUDYMATE_ALREADY_SET", "real")
+    assert load_env([tmp_path, tmp_path / "missing"]) == 1
+    import os
+    assert os.environ["STUDYMATE_FROM_FILE"] == "file" and os.environ["STUDYMATE_ALREADY_SET"] == "real"
+    monkeypatch.delenv("STUDYMATE_FROM_FILE")

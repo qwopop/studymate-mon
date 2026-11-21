@@ -20,8 +20,9 @@ import threading
 from datetime import datetime, timedelta, timezone
 from typing import Annotated, Callable, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel, Field
+from fastapi import APIRouter, Depends, HTTPException, Query, Security
+from fastapi.security import HTTPBearer
+from pydantic import BaseModel, ConfigDict, Field
 
 from . import monitoring as mon
 from . import monitoring_store as store
@@ -36,6 +37,53 @@ class SimulateRequest(BaseModel):
     lectures: int = Field(default=0, ge=0, le=60)
     practices: int = Field(default=0, ge=0, le=60)
     course_code: Optional[str] = Field(default=None, max_length=40)
+
+
+class Reason(BaseModel):
+    """One factor behind the risk score, explained with SHAP."""
+    model_config = ConfigDict(extra="allow")
+    feature: str = Field(examples=["pending_hours"])
+    label: str
+    value: float
+    impact: float = Field(description="Percentage points of risk this factor adds (red) or removes (green)")
+    text: str = Field(examples=["4 'Not submitted' hours that the teacher may still mark as absences, mostly in INF 451"])
+    course: Optional[str] = None
+
+
+class RiskResponse(BaseModel):
+    """What the model says about the signed-in student."""
+    model_config = ConfigDict(extra="allow")
+    risk: float = Field(ge=0, le=1, description="Probability of being at risk (0-1)")
+    risk_percent: int = Field(ge=0, le=100)
+    level: str = Field(description="low (<25%), medium (<50%) or high (>=50%)", examples=["high"])
+    summary: str = Field(description="The explanation in one or two sentences")
+    predicted_gpa: float = Field(ge=0, le=4, description="SDU 4.0 scale: the real current GPA, lowered only by risk factors")
+    gpa_basis: str = Field(description="'current' = anchored to the real GPA, 'model' = the model's own estimate")
+    reasons: list[Reason] = Field(description="Top factors that push the risk up")
+    helping: list[Reason] = Field(description="Top factors that keep the risk down")
+    fx: bool = Field(description="True when a course has reached the 30% absence limit (FX): the risk is then at least 90%")
+    model_version: str
+    explainer: str = Field(description="'shap' (or 'occlusion' if SHAP is unavailable)")
+
+
+class SimulationPoint(BaseModel):
+    hours: int
+    risk: float
+    predicted_gpa: float
+    fx: bool
+
+
+class SimulateResponse(BaseModel):
+    """Result of "what if I skip N lectures and M practices"."""
+    model_config = ConfigDict(extra="allow")
+    skipped_hours: float
+    before: dict
+    after: dict
+    gpa_change: float
+    risk_change: int
+    fx_courses: list[str] = Field(description="Courses that would pass the 30% absence limit")
+    curve: list[SimulationPoint] = Field(description="Risk and GPA after 0..N skipped hours (never improves)")
+    message: str = Field(examples=["New predicted GPA: 3.4. Dropout risk: 15%."])
 
 
 class CuratorRequest(BaseModel):
@@ -171,10 +219,12 @@ def build_router(*, repo, current_user: Callable, require_role: Callable, grades
     """grades(student_id, user_id) -> {"scores", "names", "trend"}; last_synced(user_id) -> iso string or None."""
     _env.update(repo=repo, grades=grades, fallback_sender=fallback_sender)
     store.ensure(repo)
-    router = APIRouter(on_startup=[start_scheduler], on_shutdown=[stop_scheduler])
+    # Registers the "Authorize" button in /docs (paste the access_token); real checking stays in current_user
+    router = APIRouter(on_startup=[start_scheduler], on_shutdown=[stop_scheduler], tags=["Monitoring & AI"],
+                       dependencies=[Security(HTTPBearer(auto_error=False))])
     student = Depends(require_role("student"))
 
-    @router.get("/api/monitoring/overview")
+    @router.get("/api/monitoring/overview", summary="Everything the Monitoring tab shows")
     def overview(user=student):
         inputs = student_inputs(user.id, user.student_id)
         base = {"has_data": inputs["has_data"], "data_source": inputs["source"], "last_synced": last_synced(user.id),
@@ -195,7 +245,10 @@ def build_router(*, repo, current_user: Callable, require_role: Callable, grades
             return {"items": []}
         return {"items": analyse(inputs)["alerts"]}
 
-    @router.post("/api/predict/risk")
+    @router.post("/api/predict/risk", response_model=RiskResponse, summary="Predict the student's academic risk",
+                 description="Runs the signed-in student's synced attendance, grades and deadlines through the trained "
+                             "RandomForest and explains the score with SHAP (top reasons that raise or lower the risk). "
+                             "Returns 409 until the student has synced some data.")
     def predict_risk(user=student):
         inputs = student_inputs(user.id, user.student_id)
         _require_data(inputs)
@@ -203,7 +256,9 @@ def build_router(*, repo, current_user: Callable, require_role: Callable, grades
         store.record_risk(repo, user.student_id, analysis["result"]["risk"], analysis["result"]["predicted_gpa"])
         return {**analysis["result"], "features": inputs["features"], "data_source": inputs["source"]}
 
-    @router.post("/api/simulate")
+    @router.post("/api/simulate", response_model=SimulateResponse, summary="What if I skip some classes?",
+                 description="Adds the skipped lectures and practices to the student's absences, re-runs the model and "
+                             "returns the new predicted GPA and risk, plus a curve for 0..N skipped hours.")
     def simulate(req: SimulateRequest, user=student):
         inputs = student_inputs(user.id, user.student_id)
         _require_data(inputs)
