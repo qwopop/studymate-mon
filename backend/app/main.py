@@ -2543,7 +2543,10 @@ def monitoring_grades(student_id: str, user_id: str) -> dict:
         n = len(means)
         mx, my = (n - 1) / 2, sum(means) / n
         trend = sum((i - mx) * (m - my) for i, m in enumerate(means)) / sum((i - mx) ** 2 for i in range(n))
-    return {"scores": [c["score"] for c in courses if c["score"] is not None], "names": names, "trend": trend}
+    graded = [c for c in courses if c["score"] is not None]
+    credits = sum(c["credits"] for c in graded)
+    gpa = sum(grade_point(c["score"]) * c["credits"] for c in graded) / credits if credits else None
+    return {"scores": [c["score"] for c in graded], "names": names, "trend": trend, "gpa": gpa}
 
 
 def monitoring_user_for_student(student_id: str) -> Optional[dict]:

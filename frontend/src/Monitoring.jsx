@@ -42,7 +42,7 @@ export function PredictedGpaWidget({ api, token, version, onOpen }) {
       <div className="mon-widget-main">
         <span className="metric-label">Predicted GPA (AI)</span>
         <div className="metric-value">{risk.predicted_gpa.toFixed(2)}<span className="metric-unit"> / 4.00</span></div>
-        <small className="muted">From attendance, grades, trend and deadlines</small>
+        <small className="muted">Your current GPA, adjusted for absences, deadlines and trend</small>
       </div>
       <div className="mon-widget-side">
         <Pill tone={RISK_TONE[risk.level]}>{risk.risk_percent}% risk</Pill>

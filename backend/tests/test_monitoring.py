@@ -189,3 +189,12 @@ def test_forecast_endpoint_lists_hardest_subjects_first(demo_student):
     body = client.get("/api/monitoring/forecast", headers=auth(demo_student)).json()
     scores = [i["current_score"] for i in body["items"]]
     assert scores == sorted(scores) and len(scores) <= 5
+
+
+def test_predicted_gpa_starts_from_the_real_gpa_and_only_adds_risk_effects():
+    clean = mon.build_features([COURSES[1]], [90, 85], 0, 0, current_gpa=3.5)
+    out = mon.score(clean)
+    assert out["gpa_basis"] == "current" and abs(out["predicted_gpa"] - 3.5) < 0.15      # perfect record: stays at the real GPA
+    risky = mon.build_features([{**COURSES[1], "absent": 10, "pending": 3}], [90, 85], 0, 2, current_gpa=3.5)
+    assert mon.score(risky)["predicted_gpa"] < out["predicted_gpa"]                       # risks pull it down
+    assert mon.score(mon.build_features([COURSES[1]], [90, 85], 0, 0))["gpa_basis"] == "model"

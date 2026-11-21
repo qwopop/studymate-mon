@@ -142,8 +142,12 @@ def grade_features(scores: list[float], trend: Optional[float]) -> dict:
     return out
 
 
-def build_features(courses: list[dict], scores: list[float], trend: Optional[float], missed_deadlines: int) -> dict:
-    return {**attendance_features(courses), **grade_features(scores, trend), "missed_deadlines": float(missed_deadlines or 0)}
+def build_features(courses: list[dict], scores: list[float], trend: Optional[float], missed_deadlines: int,
+                   current_gpa: Optional[float] = None) -> dict:
+    out = {**attendance_features(courses), **grade_features(scores, trend), "missed_deadlines": float(missed_deadlines or 0)}
+    if current_gpa is not None:
+        out["current_gpa"] = float(current_gpa)        # not a model input: the anchor for the predicted GPA
+    return out
 
 
 def score(features: dict) -> dict:
@@ -197,12 +201,13 @@ def _apply_skips(courses: list[dict], hours: float, course_code: Optional[str]) 
 
 
 def simulate(courses: list[dict], scores: list[float], trend: Optional[float], missed: int,
-             lectures: int, practices: int, course_code: Optional[str] = None, curve_points: int = 10) -> dict:
+             lectures: int, practices: int, course_code: Optional[str] = None, curve_points: int = 10,
+             current_gpa: Optional[float] = None) -> dict:
     hours = lectures * HOURS_PER_CLASS["lecture"] + practices * HOURS_PER_CLASS["practice"]
-    now_features = build_features(courses, scores, trend, missed)
+    now_features = build_features(courses, scores, trend, missed, current_gpa)
     before = score(now_features)
     after_courses = _apply_skips(courses, hours, course_code)
-    after_features = build_features(after_courses, scores, trend, missed)
+    after_features = build_features(after_courses, scores, trend, missed, current_gpa)
     after = add_course_detail(score(after_features), after_courses)
     status_after = safe_to_skip(after_courses)
     fx_courses = [c["code"] or c["name"] for c in status_after["items"] if c["fx"]]
@@ -213,7 +218,7 @@ def simulate(courses: list[dict], scores: list[float], trend: Optional[float], m
     curve_courses = [_apply_skips(courses, h, course_code) for h in range(steps + 1)]
     curve = []
     for h, cs in enumerate(curve_courses):
-        f = build_features(cs, scores, trend, missed)
+        f = build_features(cs, scores, trend, missed, current_gpa)
         guard = f.get("max_absence_pct", 0) >= ABSENCE_LIMIT_PCT
         r, g = ml.predict_many([f])[0]
         curve.append({"hours": h, "risk": round(max(r, 0.9) if guard else r, 4),

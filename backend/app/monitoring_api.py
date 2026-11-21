@@ -60,8 +60,8 @@ def student_inputs(user_id: str, student_id: str) -> dict:
         source = "attendance_sessions"
     notes = repo.get_notifications(student_id)
     missed = max(repo.missing_assignments.get(student_id, 0), sum(n["type"] == "missed_deadline" for n in notes))
-    features = mon.build_features(courses, grades["scores"], grades["trend"], missed)
-    return {"courses": courses, "scores": grades["scores"], "trend": grades["trend"], "missed": missed,
+    features = mon.build_features(courses, grades["scores"], grades["trend"], missed, grades.get("gpa"))
+    return {"courses": courses, "scores": grades["scores"], "trend": grades["trend"], "missed": missed, "gpa": grades.get("gpa"),
             "features": features, "source": source if courses else "none", "has_data": bool(courses or grades["scores"])}
 
 
@@ -212,7 +212,7 @@ def build_router(*, repo, current_user: Callable, require_role: Callable, grades
         if req.course_code and req.course_code not in [c["code"] for c in inputs["courses"]]:
             raise HTTPException(status_code=404, detail="Unknown course.")
         return mon.simulate(inputs["courses"], inputs["scores"], inputs["trend"], inputs["missed"],
-                            req.lectures, req.practices, req.course_code)
+                            req.lectures, req.practices, req.course_code, current_gpa=inputs.get("gpa"))
 
     @router.get("/api/monitoring/curator")
     def get_curator(user=student):

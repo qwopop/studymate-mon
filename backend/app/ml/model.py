@@ -63,13 +63,31 @@ def _occlusion(x: np.ndarray) -> np.ndarray:
     return out
 
 
+NEUTRAL = {"attendance_pct": 100.0, "max_absence_pct": 0.0, "absent_hours": 0.0, "pending_hours": 0.0,
+           "missed_deadlines": 0.0, "grade_trend": 0.0}
+
+
+def _gpa(bundle: dict, features: dict) -> tuple[float, str]:
+    """Predicted GPA. With the student's real current GPA known ("current_gpa"), start from it and let the model
+    only add the effect of risk factors (absences, "Not submitted" hours, missed deadlines, trend): the model's
+    own estimate of the same grades without those factors is subtracted, so good attendance neither lowers nor
+    inflates the GPA. Without it, the model's estimate is used as is."""
+    full = complete(features)
+    raw = float(bundle["regressor"].predict(np.array([vector(full)]))[0])
+    anchor = features.get("current_gpa")
+    if isinstance(anchor, (int, float)) and anchor == anchor:
+        neutral = float(bundle["regressor"].predict(np.array([vector({**full, **NEUTRAL})]))[0])
+        return clamp(float(anchor) + (raw - neutral), 0.0, 4.0), "current"
+    return clamp(raw, 0.0, 4.0), "model"
+
+
 def predict(features: dict, top: int = 3) -> dict:
     """{risk, risk_percent, level, predicted_gpa, reasons[top], model_version, explainer}."""
     bundle = load()
     full = complete(features)
     x = np.array([vector(full)])
     risk = float(bundle["classifier"].predict_proba(x)[0, 1])
-    gpa = float(clamp(bundle["regressor"].predict(x)[0], 0.0, 4.0))
+    gpa, gpa_basis = _gpa(bundle, features)
 
     contributions = _shap_values(x)
     explainer = "shap"
@@ -87,7 +105,7 @@ def predict(features: dict, top: int = 3) -> dict:
             "text": describe(name, full[name], True),
         })
     return {"risk": round(risk, 4), "risk_percent": round(risk * 100), "level": risk_level(risk),
-            "predicted_gpa": round(gpa, 2), "reasons": reasons,
+            "predicted_gpa": round(gpa, 2), "gpa_basis": gpa_basis, "reasons": reasons,
             "model_version": bundle["version"], "explainer": explainer}
 
 
@@ -96,8 +114,7 @@ def predict_many(rows: list[dict]) -> list[tuple[float, float]]:
     bundle = load()
     X = np.array([vector(r) for r in rows])
     risks = bundle["classifier"].predict_proba(X)[:, 1]
-    gpas = np.clip(bundle["regressor"].predict(X), 0.0, 4.0)
-    return [(float(a), float(b)) for a, b in zip(risks, gpas)]
+    return [(float(a), _gpa(bundle, r)[0]) for a, r in zip(risks, rows)]
 
 
 def info() -> dict:
