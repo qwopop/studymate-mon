@@ -26,7 +26,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator
 
 from .repository import LOW_GRADE_THRESHOLD, MIN_ATTENDANCE, SQLiteRepository
-from . import admin, pms_portal, sdu_client, sdu_mock, sdu_portal, moodle_calendar
+from . import admin, pms_portal, sdu_client, sdu_mock, sdu_portal, moodle_calendar, notify
 from . import deadlines as deadlines_mod
 from . import syllabi
 from . import academics
@@ -515,11 +515,18 @@ def send_gmail_code(to_email: str, code: str) -> tuple[bool, str]:
 def send_email(to_email: str, subject: str, text: str) -> tuple[bool, str]:
     """Send a plain-text email (support replies). Returns (sent, reason).
 
+    0. Resend, when RESEND_API_KEY is set (the same service the risk alerts use).
     1. Vercel HTTPS relay (Render blocks outbound SMTP). The relay's message mode
        only works with MAILER_SECRET_KEY, so it can't be used as an open relay.
     2. Direct SMTP fallback.
     """
     subject = " ".join(subject.split())[:150]
+    resend_note = ""
+    if notify.configured():
+        sent, why = notify.send_resend(to_email, subject, text)
+        if sent:
+            return True, why
+        resend_note = f"{why}; "
     mailer_secret = os.getenv("MAILER_SECRET_KEY")
     relay_error = "MAILER_SECRET_KEY not set"
     if mailer_secret:
@@ -547,7 +554,10 @@ def send_email(to_email: str, subject: str, text: str) -> tuple[bool, str]:
     smtp_user = os.getenv("GMAIL_USER") or os.getenv("SMTP_USER") or "amirzhanmeirzhan5@gmail.com"
     smtp_pass = (os.getenv("GMAIL_APP_PASSWORD") or os.getenv("SMTP_PASSWORD") or "").replace(" ", "")
     if not smtp_user or not smtp_pass:
-        return False, f"{relay_error}; SMTP credentials not configured"
+        if not resend_note and not mailer_secret:
+            return False, ("E-mail is not set up on this server. Add RESEND_API_KEY to backend/.env "
+                           "(see docs/MONITORING.md), then restart the backend.")
+        return False, f"{resend_note}{relay_error}; SMTP credentials not configured"
     try:
         msg = MIMEMultipart("alternative")
         msg["Subject"] = subject
@@ -561,6 +571,9 @@ def send_email(to_email: str, subject: str, text: str) -> tuple[bool, str]:
         return True, "Sent via SMTP"
     except Exception as exc:
         return False, f"{relay_error}; SMTP failed: {exc}"[:300]
+
+
+deliver_email = send_email   # tests replace `send_email`; this alias keeps the real function reachable
 
 
 # ─── SUPPORT TICKETS ─────────────────────────────────────────────────────────

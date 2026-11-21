@@ -322,3 +322,36 @@ def test_absence_pressure_is_named_as_a_reason_for_the_risk():
 
 def test_simulation_message_rounds_gpa_half_up_like_the_screen():
     assert "New predicted GPA: 2.3." in mon._sim_message({"predicted_gpa": 2.25, "risk_percent": 10}, 1, [])
+
+
+# ─── "Email me" / support replies: Resend is used when configured ───
+
+class _Resp:
+    def __init__(self, status, text=""): self.status_code, self.text = status, text
+
+
+def test_email_goes_through_resend_when_a_key_is_set(monkeypatch):
+    import app.main as main_mod
+    for name in ("MAILER_SECRET_KEY", "GMAIL_APP_PASSWORD", "SMTP_PASSWORD"):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("RESEND_API_KEY", "re_test")
+    seen = {}
+    monkeypatch.setattr(notify.httpx, "post", lambda url, json, headers, timeout: (seen.update(url=url, to=json["to"], auth=headers["Authorization"]) or _Resp(200)))
+    assert main_mod.deliver_email("me@sdu.edu.kz", "Weekly summary", "text") == (True, "Sent via Resend")
+    assert seen == {"url": notify.RESEND_URL, "to": ["me@sdu.edu.kz"], "auth": "Bearer re_test"}
+
+
+def test_email_without_any_service_says_what_to_do(monkeypatch):
+    import app.main as main_mod
+    for name in ("RESEND_API_KEY", "MAILER_SECRET_KEY", "GMAIL_APP_PASSWORD", "SMTP_PASSWORD"):
+        monkeypatch.delenv(name, raising=False)
+    sent, why = main_mod.deliver_email("me@sdu.edu.kz", "s", "t")
+    assert not sent and "RESEND_API_KEY" in why and "restart the backend" in why
+
+
+def test_resend_test_sender_restriction_is_explained(monkeypatch):
+    monkeypatch.setenv("RESEND_API_KEY", "re_test")
+    body = "You can only send testing emails to your own email address (owner@example.com)."
+    monkeypatch.setattr(notify.httpx, "post", lambda *a, **k: _Resp(403, body))
+    sent, why = notify.send_resend("friend@sdu.edu.kz", "s", "t")
+    assert not sent and "same address" in why and "verify your own domain" in why
