@@ -1,142 +1,231 @@
 /* ============================================================
-   StudyMate purple theme (appearance only).
-   Loaded after styles.css: it re-colours the design tokens and softens shapes.
-   No layout, behaviour, charts or animations are changed here.
-   Remove the `import './theme.css'` line in main.jsx to get the old look back.
+   StudyMate redesign: Dark Academic / Modern SaaS / Glassmorphism.
+   Presentation layer only. Loaded after styles.css, it re-colours the design tokens
+   and reshapes components; it changes no markup, routes, data, charts or behaviour.
+   Remove the `import './theme.css'` line in main.jsx to get the previous look back.
+   Light is the default theme; the existing toggle switches to dark.
    ============================================================ */
 
-/* ─── Light (default) ───────────────────────────────────────── */
+/* ─── Light theme (default) ─────────────────────────────────── */
 :root {
-  --bg:            #F1EEFF;
+  --bg:            #F5F4FB;
   --surface:       #FFFFFF;
-  --surface-2:     #F5F2FF;
-  --surface-3:     #EAE5FC;
-  --border:        #E7E1F8;
-  --border-strong: #D4CBEF;
+  --surface-2:     #F5F3FC;
+  --surface-3:     #ECE8F8;
+  --border:        #E9E5F3;
+  --border-strong: #D6D0E8;
 
-  --text-primary:   #1C1636;
-  --text-secondary: #504877;
-  --text-muted:     #8B83AE;
+  --text-primary:   #19152B;
+  --text-secondary: #77718F;
+  --text-muted:     #7E7897;
 
-  --accent:        #7C3AED;
-  --accent-hover:  #6D28D9;
-  --accent-text:   #5B21B6;
-  --accent-soft:   rgba(124, 58, 237, 0.10);
-  --accent-ring:   rgba(124, 58, 237, 0.26);
+  --accent:        #6336DB;
+  --accent-hover:  #5128C4;
+  --accent-text:   #5128C4;
+  --accent-soft:   rgba(99, 54, 219, 0.09);
+  --accent-ring:   rgba(99, 54, 219, 0.28);
 
-  --shadow-sm:  0 1px 2px rgba(76, 48, 160, 0.05);
-  --shadow-md:  0 10px 26px -8px rgba(76, 48, 160, 0.16), 0 2px 4px -2px rgba(76, 48, 160, 0.06);
-  --shadow-lg:  0 22px 50px -12px rgba(76, 48, 160, 0.26), 0 4px 10px -4px rgba(76, 48, 160, 0.08);
+  --purple-1: #7138E8;
+  --purple-2: #9B5CFF;
+  --magenta:  #C15CFF;
+  --blue:     #5D8BFF;
+  --purple-grad: linear-gradient(135deg, #7138E8 0%, #9B5CFF 100%);
+
+  --sidebar-bg: #FFFFFF;
+  --card-bg:    #FFFFFF;
+  --card-edge:  #E9E5F3;
+
+  --shadow-sm:  0 1px 2px rgba(25, 21, 43, 0.04);
+  --shadow-md:  0 8px 24px -8px rgba(60, 40, 140, 0.14), 0 2px 4px -2px rgba(60, 40, 140, 0.05);
+  --shadow-lg:  0 22px 50px -14px rgba(60, 40, 140, 0.26), 0 4px 10px -4px rgba(60, 40, 140, 0.08);
 
   --radius-sm:  10px;
   --radius:     12px;
   --radius-lg:  18px;
-  --radius-xl:  24px;
-
-  --purple-grad: linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%);
+  --radius-xl:  22px;
+  --sidebar-w:  240px;
 }
 
-/* ─── Dark ──────────────────────────────────────────────────── */
+/* ─── Dark theme ────────────────────────────────────────────── */
 [data-theme="dark"] {
-  --bg:            #120B26;
-  --surface:       #1A1334;
-  --surface-2:     #231A45;
-  --surface-3:     #2D2358;
-  --border:        #2B2150;
-  --border-strong: #3B2E6C;
+  --bg:            #0B0918;
+  --surface:       #17122E;
+  --surface-2:     #211A3B;
+  --surface-3:     #2B2350;
+  --border:        rgba(155, 92, 255, 0.16);
+  --border-strong: rgba(155, 92, 255, 0.30);
 
-  --text-primary:   #F5F2FF;
-  --text-secondary: #BDB5DD;
-  --text-muted:     #8479AF;
+  --text-primary:   #F7F5FF;
+  --text-secondary: #AAA4C3;
+  --text-muted:     #8A84A8;
 
-  --accent:        #8B5CF6;
-  --accent-hover:  #A78BFA;
-  --accent-text:   #C4B5FD;
-  --accent-soft:   rgba(139, 92, 246, 0.17);
-  --accent-ring:   rgba(139, 92, 246, 0.38);
+  --accent:        #7138E8;
+  --accent-hover:  #8550F0;
+  --accent-text:   #B68CFF;
+  --accent-soft:   rgba(155, 92, 255, 0.16);
+  --accent-ring:   rgba(155, 92, 255, 0.42);
 
-  --success:       #34D399;
-  --success-soft:  rgba(52, 211, 153, 0.13);
-  --warning:       #FBBF24;
-  --warning-soft:  rgba(251, 191, 36, 0.13);
-  --danger:        #FB7185;
-  --danger-soft:   rgba(251, 113, 133, 0.13);
-  --neutral:       #8479AF;
-  --neutral-soft:  rgba(132, 121, 175, 0.18);
+  --success:       #2DD889;
+  --success-soft:  rgba(45, 216, 137, 0.13);
+  --warning:       #FFB84D;
+  --warning-soft:  rgba(255, 184, 77, 0.13);
+  --danger:        #FF5F78;
+  --danger-soft:   rgba(255, 95, 120, 0.13);
+  --neutral:       #8A84A8;
+  --neutral-soft:  rgba(138, 132, 168, 0.18);
+
+  --sidebar-bg: #100D24;
+  --card-bg:    rgba(25, 20, 48, 0.78);
+  --card-edge:  rgba(155, 92, 255, 0.16);
 
   --shadow-sm:  none;
-  --shadow-md:  0 10px 28px rgba(5, 2, 18, 0.5);
-  --shadow-lg:  0 24px 56px rgba(5, 2, 18, 0.65);
+  --shadow-md:  0 10px 28px rgba(4, 2, 16, 0.5);
+  --shadow-lg:  0 24px 56px rgba(4, 2, 16, 0.68);
 }
 
-/* ─── Page background ───────────────────────────────────────── */
+/* ─── Layered background ────────────────────────────────────── */
 body {
   background:
-    radial-gradient(900px 520px at 0% 0%, rgba(167, 139, 250, 0.22), transparent 60%),
-    linear-gradient(165deg, #ECE7FF 0%, #F5F2FF 45%, #FAF9FF 100%);
+    radial-gradient(900px 520px at 0% 0%, rgba(113, 56, 232, 0.08), transparent 62%),
+    #F5F4FB;
   background-attachment: fixed;
 }
 [data-theme="dark"] body {
   background:
-    radial-gradient(900px 560px at 100% 100%, rgba(124, 58, 237, 0.30), transparent 62%),
-    linear-gradient(165deg, #1B1238 0%, #120B26 55%, #0F0A20 100%);
+    radial-gradient(1000px 640px at 0% 0%, rgba(113, 56, 232, 0.30), transparent 62%),
+    radial-gradient(900px 620px at 100% 100%, rgba(193, 92, 255, 0.22), transparent 64%),
+    radial-gradient(560px 380px at 100% 0%, rgba(93, 139, 255, 0.07), transparent 70%),
+    #0B0918;
   background-attachment: fixed;
 }
+/* soft flowing shapes near the edges, far from the text */
+body::before {
+  content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(ellipse 55% 26% at 108% 72%, rgba(155, 92, 255, 0.06), transparent 70%),
+    radial-gradient(ellipse 45% 22% at -8% 88%, rgba(113, 56, 232, 0.06), transparent 70%);
+}
+[data-theme="dark"] body::before {
+  background:
+    radial-gradient(ellipse 55% 26% at 108% 72%, rgba(193, 92, 255, 0.13), transparent 70%),
+    radial-gradient(ellipse 45% 22% at -8% 88%, rgba(113, 56, 232, 0.16), transparent 70%);
+}
+
+/* ─── Typography ────────────────────────────────────────────── */
+body { font-size: 14px; }
+@media (min-width: 901px) {
+  .topbar-title h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; }
+  .topbar-title p { font-size: 14px; }
+}
+.card-head h2, .group-head h2 { font-size: 16px; font-weight: 600; }
+.metric-value { font-size: 34px; font-weight: 700; }
+.metric-label { font-size: 13px; }
+.metric-unit, .muted { font-size: inherit; }
 
 /* ─── Sidebar ───────────────────────────────────────────────── */
-.sidebar { background: var(--surface); border-right-color: var(--border); }
-[data-theme="dark"] .sidebar { background: rgba(21, 14, 46, 0.92); }
-
+.sidebar { background: var(--sidebar-bg); border-right: 1px solid var(--border); padding: 22px 14px 16px; }
 .brand-mark, [data-theme="dark"] .brand-mark { background: var(--purple-grad); color: #fff; border-radius: 11px; }
-.brand-text span { color: var(--text-muted); }
-
-.side-link { border-radius: 12px; height: 38px; }
+.side-link { height: 40px; border-radius: 12px; font-size: 14px; }
 .side-link:hover { background: var(--accent-soft); color: var(--text-primary); }
-.side-link.active { background: #E9E2FF; color: var(--accent-text); font-weight: 600; }
-.side-link.active svg { color: var(--accent); }
-[data-theme="dark"] .side-link.active {
-  background: var(--purple-grad); color: #fff;
-  box-shadow: 0 8px 18px -8px rgba(124, 58, 237, 0.75);
+.side-link.active, [data-theme="dark"] .side-link.active {
+  background: var(--purple-grad); color: #fff; font-weight: 600;
+  box-shadow: 0 8px 18px -8px rgba(113, 56, 232, 0.7);
 }
-[data-theme="dark"] .side-link.active svg { color: #fff; }
-.side-label { letter-spacing: .02em; }
+.side-link.active svg, [data-theme="dark"] .side-link.active svg { color: #fff; }
+.side-label { font-size: 12px; letter-spacing: .03em; }
 .side-foot { border-top-color: var(--border); }
 
-/* ─── Top bar ───────────────────────────────────────────────── */
+/* ─── Top bar and avatar ────────────────────────────────────── */
+.topbar { background: color-mix(in srgb, var(--bg) 55%, transparent); }
 .avatar { background: var(--purple-grad); color: #fff; }
 
-/* ─── Cards ─────────────────────────────────────────────────── */
-.card { border-radius: var(--radius-lg); border-color: var(--border); }
+/* ─── Cards (glass in dark) ─────────────────────────────────── */
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-edge);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
 [data-theme="dark"] .card {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.01)), var(--surface);
+  -webkit-backdrop-filter: blur(10px) saturate(120%);
+  backdrop-filter: blur(10px) saturate(120%);
+}
+.group-head, .card-foot { border-color: var(--border); }
+
+/* Overview KPI cards: a gentle tint in the corner (purple, green, amber) */
+.overview-stats .metric-grid > .metric:nth-child(1) { background-image: radial-gradient(260px 140px at 100% 0%, rgba(113, 56, 232, 0.13), transparent 70%); }
+.overview-stats .metric-grid > .metric:nth-child(2) { background-image: radial-gradient(260px 140px at 100% 0%, rgba(45, 216, 137, 0.14), transparent 70%); }
+.overview-stats .metric-grid > .metric:nth-child(3) { background-image: radial-gradient(260px 140px at 100% 0%, rgba(255, 184, 77, 0.15), transparent 70%); }
+[data-theme="dark"] .overview-stats .metric-grid > .metric:nth-child(1) { background-image: radial-gradient(260px 140px at 100% 0%, rgba(155, 92, 255, 0.28), transparent 70%); }
+[data-theme="dark"] .overview-stats .metric-grid > .metric:nth-child(2) { background-image: radial-gradient(260px 140px at 100% 0%, rgba(45, 216, 137, 0.20), transparent 70%); }
+[data-theme="dark"] .overview-stats .metric-grid > .metric:nth-child(3) { background-image: radial-gradient(260px 140px at 100% 0%, rgba(255, 184, 77, 0.20), transparent 70%); }
+
+/* ─── Buttons, fields, progress, modal ──────────────────────── */
+.btn-primary, .btn-submit-primary,
+[data-theme="dark"] .btn-primary, [data-theme="dark"] .btn-submit-primary { background: var(--purple-grad); color: #fff; border-radius: var(--radius); }
+.btn-primary:hover:not(:disabled), .btn-submit-primary:hover:not(:disabled) { background: linear-gradient(135deg, #8550F0 0%, #AC74FF 100%); }
+.btn-ghost { border-radius: var(--radius); border-color: var(--border-strong); }
+.input, .select, .input-field, .modal-body select, .modal-body input:not(.input-field), .modal-body textarea { border-radius: var(--radius); }
+.progress { background: var(--surface-3); }
+.fill-accent { background: var(--purple-grad); }
+.modal { border-radius: var(--radius-xl); border: 1px solid var(--border); }
+[data-theme="dark"] .modal-overlay { background: rgba(5, 3, 16, 0.62); }
+.segmented-item.active { border-radius: 9px; }
+
+/* ─── Schedule: day cards and class rows ────────────────────── */
+.day-tab { border-radius: 14px; border-color: var(--card-edge); background: var(--card-bg); }
+.day-tab.active, [data-theme="dark"] .day-tab.active {
+  background: var(--purple-grad); border-color: transparent; box-shadow: 0 10px 22px -10px rgba(113, 56, 232, 0.75);
+}
+.day-tab.active span, [data-theme="dark"] .day-tab.active span { color: #fff; }
+.day-tab.active small, [data-theme="dark"] .day-tab.active small { color: rgba(255, 255, 255, 0.86); }
+
+/* ─── Login page ────────────────────────────────────────────── */
+.login-page { background: var(--bg); }
+.login-copy { background: transparent; border-right-color: var(--border); }
+.login-hero h1 { font-weight: 700; }
+
+/* ─── Focus: always visible, never colour-only ──────────────── */
+:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 2px; }
+button:focus-visible, a:focus-visible, .side-link:focus-visible, .day-tab:focus-visible {
+  box-shadow: 0 0 0 4px var(--accent-ring);
 }
 
-/* Overview metric cards: lavender, mint and peach tints (light), tinted glass (dark) */
-.overview-stats .metric-grid > .metric:nth-child(1) { background: linear-gradient(135deg, #F1ECFF, #E3D9FF); border-color: #DCD0FA; }
-.overview-stats .metric-grid > .metric:nth-child(2) { background: linear-gradient(135deg, #EAFBF2, #D4F4E4); border-color: #C5EDDA; }
-.overview-stats .metric-grid > .metric:nth-child(3) { background: linear-gradient(135deg, #FFF3E8, #FFE6D0); border-color: #FBDCBF; }
-[data-theme="dark"] .overview-stats .metric-grid > .metric:nth-child(1) { background: linear-gradient(135deg, rgba(139, 92, 246, 0.24), rgba(139, 92, 246, 0.05)), var(--surface); border-color: #3A2C70; }
-[data-theme="dark"] .overview-stats .metric-grid > .metric:nth-child(2) { background: linear-gradient(135deg, rgba(52, 211, 153, 0.14), rgba(52, 211, 153, 0.03)), var(--surface); border-color: #243B52; }
-[data-theme="dark"] .overview-stats .metric-grid > .metric:nth-child(3) { background: linear-gradient(135deg, rgba(251, 191, 36, 0.14), rgba(251, 191, 36, 0.03)), var(--surface); border-color: #3E3050; }
+/* ─── Tablet: compact icon sidebar (labels stay readable by screen readers) ─── */
+@media (min-width: 901px) and (max-width: 1100px) {
+  :root { --sidebar-w: 76px; }
+  .sidebar { padding-left: 10px; padding-right: 10px; align-items: center; }
+  .brand { padding: 0; justify-content: center; }
+  .brand-text, .side-label, .sync-text, .side-foot .muted { display: none; }
+  .side-nav, .side-group { align-items: stretch; width: 100%; }
+  .side-link { justify-content: center; padding: 0; }
+  .side-link span {
+    position: absolute; width: 1px; height: 1px; overflow: hidden;
+    clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap;
+  }
+  .sync-row { justify-content: center; padding: 0; }
+  .shell:not(.shell-single) .content, .shell:not(.shell-single) .topbar { padding-left: 28px; padding-right: 28px; }
+}
 
-/* ─── Buttons, inputs, progress ─────────────────────────────── */
-.btn-primary, .btn-submit-primary { background: var(--purple-grad); border-radius: var(--radius); color: #fff; }
-.btn-primary:hover:not(:disabled), .btn-submit-primary:hover:not(:disabled) { background: linear-gradient(135deg, #9F7AF9 0%, #7C3AED 100%); }
-.btn-ghost { border-radius: var(--radius); border-color: var(--border); }
-.input, .select, .input-field { border-radius: var(--radius); }
-.fill-accent { background: var(--purple-grad); }
-.progress { background: var(--surface-3); }
+/* ─── Phones ────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .topbar-title h1 { font-size: 22px; font-weight: 700; }
+  .bottom-nav { background: color-mix(in srgb, var(--sidebar-bg) 94%, transparent); }
+  .bottom-link.active { color: var(--accent-text); font-weight: 600; }
+  .card { border-radius: 16px; }
+}
+@media (max-width: 640px) {
+  .metric-grid { grid-template-columns: minmax(0, 1fr); }
+  .content { overflow-x: hidden; }
+}
 
-/* ─── Schedule day tabs ─────────────────────────────────────── */
-.day-tab { border-radius: 14px; border-color: var(--border); }
-.day-tab.active { background: #EAE3FF; border-color: var(--accent); }
-.day-tab.active span { color: var(--accent-text); }
-[data-theme="dark"] .day-tab.active { background: var(--purple-grad); border-color: transparent; box-shadow: 0 10px 22px -10px rgba(124, 58, 237, 0.8); }
-[data-theme="dark"] .day-tab.active span { color: #fff; }
-[data-theme="dark"] .day-tab.active small { color: rgba(255, 255, 255, 0.82); }
+/* ─── Reduced motion (the base sheet already stops animation; this keeps the glass blur static too) ─── */
+@media (prefers-reduced-motion: reduce) {
+  .card { transition: none; }
+}
 
-/* ─── Mobile bottom bar ─────────────────────────────────────── */
-.bottom-link.active { color: var(--accent-text); }
-
-/* ─── Top bar: let the page gradient show through (no visible band) ─── */
-.topbar { background: color-mix(in srgb, var(--bg) 45%, transparent); }
+/* ─── Narrow screens: card headers wrap instead of running past the card ─── */
+@media (max-width: 900px) {
+  .group-head { flex-wrap: wrap; row-gap: 4px; }
+  .group-head span { white-space: normal; }
+}
