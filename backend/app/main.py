@@ -33,7 +33,7 @@ from . import academics
 from . import goals as goals_mod
 from . import summaries as summaries_mod
 from . import db as dbmod
-from . import monitoring_store, monitoring_api
+from . import monitoring, monitoring_store, monitoring_api
 
 
 class SduAuthorizeRequest(BaseModel):
@@ -2558,6 +2558,28 @@ app.include_router(monitoring_api.build_router(
     fallback_sender=lambda to, subject, text: send_email(to, subject, text),
     teacher_scope=lambda user: repo.teacher_scope.get(user.teacher_id, set()),
     user_for_student=monitoring_user_for_student))
+
+
+@app.get("/api/monitoring/forecast")
+def monitoring_forecast(user: Annotated[User, Depends(require_role("student"))], semester: str = Query("spring-2026"), limit: int = Query(5, ge=1, le=12)):
+    """Forecast chart data for the hardest subjects: lowest current scores first, with the final-grade range
+    from the existing forecast and each course's attendance standing from the class-hour counts."""
+    base = student_forecast(user, semester)["items"]
+    inputs = monitoring_api.student_inputs(user.id, user.student_id)
+    standing = {c["code"]: c for c in monitoring.safe_to_skip(inputs["courses"])["items"]}
+    rows = []
+    for item in sorted((i for i in base if i["current_score"] is not None), key=lambda i: i["current_score"])[:limit]:
+        f = item["forecast"]
+        shown = f.get("status") in ("predicted", "final")
+        att = standing.get(item["code"])
+        rows.append({"course": item["course"], "code": item["code"], "current_score": item["current_score"],
+                     "forecast_status": f.get("status"),
+                     "predicted_score": f.get("predicted_score") if shown else None,
+                     "low": f.get("low") if shown else None, "high": f.get("high") if shown else None,
+                     "letter": f.get("letter") if shown else None,
+                     "attendance_level": att["level"] if att else None,
+                     "remaining_skips": att["remaining_skips"] if att else None})
+    return {"semester": semester, "items": rows, "min_completion": round(academics.FORECAST_MIN_COMPLETION * 100)}
 
 
 # In production the frontend build is copied here by the container build.

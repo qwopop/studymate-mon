@@ -63,7 +63,7 @@ def train(rows: int = 1000, seed: int = 42, save: bool = True) -> dict:
         METRICS_PATH.write_text(json.dumps({"version": version, "params": params, "features": FEATURES, **metrics},
                                            indent=2) + "\n")
         run_id = tracking.log_run({**params, "rows": rows, "model": "RandomForestClassifier"}, metrics,
-                                  [METRICS_PATH, MODEL_PATH], model=forest, run_name=f"risk-{version}")
+                                  [METRICS_PATH, MODEL_PATH], run_name=f"risk-{version}")
         if run_id:
             print(f"Logged to MLflow run {run_id}")
     return bundle

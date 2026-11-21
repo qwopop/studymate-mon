@@ -52,3 +52,7 @@ Copy `.env.example` to `.env` if you want to override `SQLITE_PATH`.
 ## Railway deployment
 
 The root `Dockerfile` builds React and serves it from FastAPI as one service. Attach a Railway Volume at `/data` so the SQLite database survives redeployments. Generate a public domain for port `8000` and set a strong `AUTH_SECRET` variable.
+
+## Smart monitoring (risk model, Monitoring tab, alerts)
+
+Predictive analytics, risk indicators, dashboards and alerts are described in [docs/MONITORING.md](docs/MONITORING.md), including how to set up Neon, Resend and DagsHub.

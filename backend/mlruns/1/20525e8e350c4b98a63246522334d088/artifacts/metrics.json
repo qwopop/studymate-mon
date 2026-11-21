@@ -1,0 +1,31 @@
+{
+  "version": "20261121-134819",
+  "params": {
+    "n_estimators": 150,
+    "max_depth": 7,
+    "min_samples_leaf": 3,
+    "random_state": 42
+  },
+  "features": [
+    "attendance_pct",
+    "max_absence_pct",
+    "absent_hours",
+    "pending_hours",
+    "avg_grade",
+    "min_grade",
+    "grade_trend",
+    "missed_deadlines",
+    "low_grade_courses"
+  ],
+  "accuracy": 0.845,
+  "f1": 0.8187,
+  "precision": 0.8046,
+  "recall": 0.8333,
+  "roc_auc": 0.9246,
+  "gpa_mae": 0.139,
+  "baseline_logreg_accuracy": 0.84,
+  "baseline_logreg_f1": 0.8161,
+  "train_rows": 800,
+  "test_rows": 200,
+  "at_risk_share": 0.422
+}

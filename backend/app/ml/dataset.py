@@ -2,7 +2,7 @@
 
 Rules encoded here (the same ones the app teaches in the Monitoring tab):
   * absence >= 30% of a course's hours (attendance < 70%) -> FX, so the student is at risk
-  * every missed deadline pulls the GPA down
+  * every missed deadline pulls the GPA down; a course lost to FX counts as a failed course
   * "Not submitted" hours are not absences yet, but they raise the risk because teachers may
     convert them into absences
   * weak and falling grades raise the risk
@@ -41,7 +41,7 @@ def generate(n: int = 1000, seed: int = 42) -> tuple[np.ndarray, np.ndarray, np.
     X = np.column_stack([attendance, absence, absent_hours, pending, avg_grade, min_grade, trend, missed, low_courses])
     assert X.shape[1] == len(FEATURES)
 
-    gpa = sdu_points(avg_grade) - 0.14 * missed - 0.02 * np.maximum(0, absence - 15) \
+    gpa = sdu_points(avg_grade) - 0.14 * missed - 0.03 * np.maximum(0, absence - 10) - 0.9 * (absence >= ABSENCE_LIMIT_PCT) \
         + 0.03 * trend - 0.04 * pending + rng.normal(0, 0.12, n)
     gpa = np.clip(gpa, 0.0, 4.0)
 

@@ -17,7 +17,7 @@ def enabled() -> bool:
     return bool(os.getenv("MLFLOW_TRACKING_URI"))
 
 
-def log_run(params: dict, metrics: dict, artifacts: list[Path], model=None, run_name: Optional[str] = None) -> Optional[str]:
+def log_run(params: dict, metrics: dict, artifacts: list[Path], run_name: Optional[str] = None) -> Optional[str]:
     """Returns the MLflow run id, or None when tracking is off or unavailable."""
     if not enabled():
         return None
@@ -32,12 +32,10 @@ def log_run(params: dict, metrics: dict, artifacts: list[Path], model=None, run_
         with mlflow.start_run(run_name=run_name) as run:
             mlflow.log_params(params)
             mlflow.log_metrics({k: float(v) for k, v in metrics.items() if isinstance(v, (int, float))})
-            for path in artifacts:
+            mlflow.set_tag("model_type", "RandomForestClassifier + RandomForestRegressor")
+            for path in artifacts:   # the joblib model and metrics.json are versioned as run artifacts
                 if Path(path).exists():
                     mlflow.log_artifact(str(path))
-            if model is not None:
-                import mlflow.sklearn
-                mlflow.sklearn.log_model(model, "risk_classifier")
             return run.info.run_id
     except Exception as exc:                                    # tracking must never break training
         print(f"MLflow logging failed: {exc}")

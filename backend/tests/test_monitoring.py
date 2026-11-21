@@ -183,3 +183,9 @@ def test_low_risk_sends_nothing(monkeypatch):
 def test_resend_without_key_does_not_touch_the_network(monkeypatch):
     monkeypatch.delenv("RESEND_API_KEY", raising=False)
     assert notify.send_resend("a@b.kz", "s", "t") == (False, "RESEND_API_KEY is not set")
+
+
+def test_forecast_endpoint_lists_hardest_subjects_first(demo_student):
+    body = client.get("/api/monitoring/forecast", headers=auth(demo_student)).json()
+    scores = [i["current_score"] for i in body["items"]]
+    assert scores == sorted(scores) and len(scores) <= 5
