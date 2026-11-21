@@ -217,3 +217,28 @@ def test_risk_is_explained_in_words_for_low_and_high_risk():
     high = mon.add_course_detail(mon.score(mon.build_features(COURSES, [72, 65], -2, 1)), COURSES)
     assert high["summary"].startswith(f"Your risk is {high['risk_percent']}%") and "mainly because" in high["summary"]
     assert "INF 451" in high["summary"] or len(high["reasons"]) > 0
+
+
+def test_training_on_a_real_data_csv_and_rejecting_bad_files(tmp_path):
+    import csv
+
+    from app.ml import train as train_mod
+    X, y, gpa = dataset.generate(400, seed=7)         # only a stand-in for a real export, to test the pipeline
+    path = tmp_path / "students.csv"
+    with open(path, "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow([*FEATURES, "is_at_risk", "gpa"])
+        for row, label, g in zip(X, y, gpa):
+            w.writerow([*row, int(label), g])
+    bundle = train_mod.train(save=False, csv_path=str(path))
+    assert bundle["metrics"]["data_source"] == "real:students.csv" and bundle["metrics"]["gpa_model_data"] == "real"
+    assert bundle["metrics"]["train_rows"] == 320 and bundle["metrics"]["accuracy"] > 0.7
+
+    few = tmp_path / "few.csv"
+    few.write_text(train_mod.template_csv())
+    with pytest.raises(SystemExit, match="Not enough real data"):
+        train_mod.load_csv(str(few))
+    wrong = tmp_path / "wrong.csv"
+    wrong.write_text("a,b\n1,2\n")
+    with pytest.raises(SystemExit, match="needs columns"):
+        train_mod.load_csv(str(wrong))

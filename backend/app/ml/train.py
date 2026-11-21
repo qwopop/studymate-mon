@@ -27,8 +27,56 @@ MODEL_PATH = MODEL_DIR / "risk_model.joblib"
 METRICS_PATH = MODEL_DIR / "metrics.json"
 
 
-def train(rows: int = 1000, seed: int = 42, save: bool = True) -> dict:
+MIN_REAL_ROWS = 200
+LABEL = "is_at_risk"
+
+
+def template_csv() -> str:
+    """Header plus one example row: what a real data file has to look like."""
+    example = {"attendance_pct": 92, "max_absence_pct": 12, "absent_hours": 5, "pending_hours": 1, "avg_grade": 74,
+               "min_grade": 61, "grade_trend": -1.5, "missed_deadlines": 1, "low_grade_courses": 0, LABEL: 0, "gpa": 2.4}
+    cols = [*FEATURES, LABEL, "gpa"]
+    return ",".join(cols) + "\n" + ",".join(str(example[c]) for c in cols) + "\n"
+
+
+def load_csv(path: str) -> tuple[np.ndarray, np.ndarray, "np.ndarray | None"]:
+    """Real students, one row each: the nine feature columns, `is_at_risk` (0/1: failed a course with FX, or needed
+    support) and optionally `gpa` (the final term GPA on the 4.0 scale). Rows with gaps are dropped."""
+    import csv
+    with open(path, newline="", encoding="utf-8-sig") as handle:
+        rows = list(csv.DictReader(handle))
+    missing = [c for c in [*FEATURES, LABEL] if rows and c not in rows[0]]
+    if not rows or missing:
+        raise SystemExit(f"{path}: needs columns {', '.join([*FEATURES, LABEL])}" + (f" (missing: {', '.join(missing)})" if missing else ""))
+    X, y, gpa = [], [], []
+    for row in rows:
+        try:
+            X.append([float(row[c]) for c in FEATURES])
+            label = int(float(row[LABEL]))
+            if label not in (0, 1):
+                raise ValueError
+            y.append(label)
+            gpa.append(float(row["gpa"]) if row.get("gpa") not in (None, "") else float("nan"))
+        except (ValueError, TypeError):
+            continue
+    X, y, gpa = np.array(X), np.array(y), np.array(gpa)
+    if len(y) < MIN_REAL_ROWS or len(set(y)) < 2 or min(np.bincount(y)) < 20:
+        raise SystemExit(f"Not enough real data: {len(y)} usable rows, need at least {MIN_REAL_ROWS} with 20+ of each outcome.")
+    return X, y, (gpa if not np.isnan(gpa).any() else None)
+
+
+def train(rows: int = 1000, seed: int = 42, save: bool = True, csv_path: "str | None" = None) -> dict:
     X, y, gpa = generate(rows, seed)
+    source = "synthetic"
+    gpa_source = "synthetic"
+    if csv_path:
+        X, y, real_gpa = load_csv(csv_path)
+        source = f"real:{Path(csv_path).name}"
+        if real_gpa is not None:
+            gpa, gpa_source = real_gpa, "real"
+        else:                                              # no GPA column: the GPA model stays synthetic
+            _, _, gpa_syn = generate(len(y), seed)
+            gpa = gpa_syn
     X_tr, X_te, y_tr, y_te, g_tr, g_te = train_test_split(X, y, gpa, test_size=0.2, random_state=seed, stratify=y)
 
     params = {"n_estimators": 150, "max_depth": 7, "min_samples_leaf": 3, "random_state": seed}
@@ -41,6 +89,7 @@ def train(rows: int = 1000, seed: int = 42, save: bool = True) -> dict:
     proba = forest.predict_proba(X_te)[:, 1]
     base_pred = baseline.predict((X_te - X_tr.mean(0)) / X_tr.std(0))
     metrics = {
+        "data_source": source, "gpa_model_data": gpa_source,
         "accuracy": round(accuracy_score(y_te, pred), 4),
         "f1": round(f1_score(y_te, pred), 4),
         "precision": round(precision_score(y_te, pred), 4),
@@ -73,7 +122,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--rows", type=int, default=1000)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--csv", help="train on real students from this CSV instead of synthetic data")
+    parser.add_argument("--template", action="store_true", help="print an example CSV header and exit")
     args = parser.parse_args()
-    result = train(args.rows, args.seed)
+    if args.template:
+        print(template_csv(), end="")
+        raise SystemExit(0)
+    result = train(args.rows, args.seed, csv_path=args.csv)
     print(json.dumps(result["metrics"], indent=2))
     print(f"Saved {MODEL_PATH}")
