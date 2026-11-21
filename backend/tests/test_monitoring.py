@@ -198,3 +198,13 @@ def test_predicted_gpa_starts_from_the_real_gpa_and_only_adds_risk_effects():
     risky = mon.build_features([{**COURSES[1], "absent": 10, "pending": 3}], [90, 85], 0, 2, current_gpa=3.5)
     assert mon.score(risky)["predicted_gpa"] < out["predicted_gpa"]                       # risks pull it down
     assert mon.score(mon.build_features([COURSES[1]], [90, 85], 0, 0))["gpa_basis"] == "model"
+
+
+def test_simulation_curve_never_improves_when_skipping_more():
+    for gpa in (None, 3.4):
+        sim = mon.simulate([{**COURSES[1], "absent": 0}], [92, 88], 1, 0, lectures=3, practices=1, course_code="MAT 101", current_gpa=gpa)
+        risks = [p["risk"] for p in sim["curve"]]
+        gpas = [p["predicted_gpa"] for p in sim["curve"]]
+        assert risks == sorted(risks) and gpas == sorted(gpas, reverse=True)
+        assert sim["curve"][0]["risk"] == sim["before"]["risk"]
+        assert sim["risk_change"] >= 0 and sim["gpa_change"] <= 0

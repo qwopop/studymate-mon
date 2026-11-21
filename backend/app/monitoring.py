@@ -209,6 +209,11 @@ def simulate(courses: list[dict], scores: list[float], trend: Optional[float], m
     after_courses = _apply_skips(courses, hours, course_code)
     after_features = build_features(after_courses, scores, trend, missed, current_gpa)
     after = add_course_detail(score(after_features), after_courses)
+    # Skipping classes can never make things better: the model is not monotonic at low risk, so cap it
+    after["risk"] = max(after["risk"], before["risk"])
+    after["risk_percent"] = round(after["risk"] * 100)
+    after["level"] = risk_level(after["risk"])
+    after["predicted_gpa"] = min(after["predicted_gpa"], before["predicted_gpa"])
     status_after = safe_to_skip(after_courses)
     fx_courses = [c["code"] or c["name"] for c in status_after["items"] if c["fx"]]
     newly_fx = [c for c in fx_courses if c not in [s["code"] or s["name"] for s in safe_to_skip(courses)["items"] if s["fx"]]]
@@ -217,12 +222,14 @@ def simulate(courses: list[dict], scores: list[float], trend: Optional[float], m
     steps = max(curve_points, int(math.ceil(hours)) + 2)
     curve_courses = [_apply_skips(courses, h, course_code) for h in range(steps + 1)]
     curve = []
+    floor_risk, ceiling_gpa = before["risk"], before["predicted_gpa"]      # every point starts from today's values
     for h, cs in enumerate(curve_courses):
         f = build_features(cs, scores, trend, missed, current_gpa)
         guard = f.get("max_absence_pct", 0) >= ABSENCE_LIMIT_PCT
         r, g = ml.predict_many([f])[0]
-        curve.append({"hours": h, "risk": round(max(r, 0.9) if guard else r, 4),
-                      "predicted_gpa": round(g, 2), "fx": guard})
+        floor_risk = max(floor_risk, 0.9 if guard else r)                   # only ever rises with more skipped hours
+        ceiling_gpa = min(ceiling_gpa, g)                                   # only ever falls
+        curve.append({"hours": h, "risk": round(floor_risk, 4), "predicted_gpa": round(ceiling_gpa, 2), "fx": guard})
     return {
         "skipped_hours": _int(hours), "lectures": lectures, "practices": practices, "course": course_code,
         "before": _brief(before), "after": _brief(after),
