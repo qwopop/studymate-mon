@@ -65,6 +65,9 @@ New **Monitoring** tab (`frontend/src/Monitoring.jsx`): Safe-to-Skip bars (green
 2. Set `RESEND_API_KEY` and `RESEND_FROM` (the shared `onboarding@resend.dev` sender only delivers to your own Resend account address, so verify a domain for real students).
 3. A background job (APScheduler, every `ALERT_INTERVAL_MINUTES`, default 360) and every SDU sync check the risk. At **≥ 50%** (`RISK_ALERT_THRESHOLD`) the student gets an e-mail, and so does the curator when one is saved. Nobody is mailed twice within 24 h unless the risk jumps by 15 points. Without `RESEND_API_KEY` nothing is sent and the scheduler stays off.
 
+### Other e-mails (Progress summary "Email me", support replies)
+These use the same sender. With `RESEND_API_KEY` set they go through Resend; otherwise the older options are tried (`MAILER_SECRET_KEY` relay, or Gmail SMTP with `GMAIL_USER` and `GMAIL_APP_PASSWORD`). With none of them set, the page says what to do. Resend's free test sender only delivers to the address of your Resend account, so for a quick demo either sign up to Resend with the e-mail address that receives the summary, or use Gmail SMTP, which can send to any address.
+
 ## Stage 5 · DagsHub (MLflow)
 1. Create a repo on <https://dagshub.com> (connect this GitHub repo) → *Remote → Experiments* shows the MLflow URL.
 2. `pip install -r backend/requirements-mlops.txt`

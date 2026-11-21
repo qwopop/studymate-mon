@@ -59,6 +59,9 @@ def send_resend(to_email: str, subject: str, text: str, html_body: str | None = 
         return False, f"Resend unreachable: {type(exc).__name__}"
     if resp.status_code in (200, 201):
         return True, "Sent via Resend"
+    if resp.status_code == 403 and "testing emails" in resp.text.lower():
+        return False, ("Resend's free test sender only delivers to the e-mail address of your Resend account. "
+                       "Sign up to Resend with the same address, or verify your own domain and set RESEND_FROM.")
     return False, f"Resend error {resp.status_code}: {resp.text[:150]}"
 
 
