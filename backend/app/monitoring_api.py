@@ -1,0 +1,257 @@
+"""HTTP layer for the Monitoring tab, the risk model and the e-mail alerts.
+
+build_router() receives the pieces that live in main.py (auth dependencies, grade helpers), so this module
+never imports main and nothing existing had to change shape.
+
+    GET  /api/monitoring/overview   safe-to-skip, AI risk, predicted GPA, alerts, sync info
+    GET  /api/monitoring/alerts     the alert feed
+    POST /api/predict/risk          risk + top-3 SHAP reasons for the signed-in student
+    POST /api/simulate              "what if I skip N lectures / M practices"
+    GET/PUT/DELETE /api/monitoring/curator   curator e-mail that receives the same alerts
+    POST /api/monitoring/notify     send the risk e-mail now (also runs on a schedule)
+    GET  /api/monitoring/model      model version and metrics
+    GET  /api/teacher/monitoring/students   risk per student in the teacher's scope
+"""
+from __future__ import annotations
+
+import logging
+import os
+import threading
+from datetime import datetime, timedelta, timezone
+from typing import Annotated, Callable, Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel, Field
+
+from . import monitoring as mon
+from . import monitoring_store as store
+from . import notify
+from .ml import model as ml
+
+log = logging.getLogger("studymate.monitoring")
+ALERT_COOLDOWN = timedelta(hours=int(os.getenv("RISK_ALERT_COOLDOWN_HOURS", "24")))
+
+
+class SimulateRequest(BaseModel):
+    lectures: int = Field(default=0, ge=0, le=60)
+    practices: int = Field(default=0, ge=0, le=60)
+    course_code: Optional[str] = Field(default=None, max_length=40)
+
+
+class CuratorRequest(BaseModel):
+    email: str = Field(min_length=5, max_length=160, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+    name: Optional[str] = Field(default=None, max_length=100)
+
+
+# Wired once by build_router(); module-level so record_current_risk() (called after a sync) can reuse them
+_env: dict = {}
+
+
+def student_inputs(user_id: str, student_id: str) -> dict:
+    """Everything the model needs for one student, from the local database (synced SDU data or seeded data)."""
+    repo = _env["repo"]
+    snap = repo.get_snapshot(user_id, "attendance_detail") or {}
+    courses = mon.courses_from_rows(snap.get("rows") or [])
+    source = "sdu_journal"
+    grades = _env["grades"](student_id, user_id)                  # {"scores", "names", "trend"}
+    if not courses:
+        courses = mon.courses_from_sessions(repo.get_attendance_sessions(student_id), grades["names"],
+                                            store.attendance_log(repo, student_id))
+        source = "attendance_sessions"
+    notes = repo.get_notifications(student_id)
+    missed = max(repo.missing_assignments.get(student_id, 0), sum(n["type"] == "missed_deadline" for n in notes))
+    features = mon.build_features(courses, grades["scores"], grades["trend"], missed)
+    return {"courses": courses, "scores": grades["scores"], "trend": grades["trend"], "missed": missed,
+            "features": features, "source": source if courses else "none", "has_data": bool(courses or grades["scores"])}
+
+
+def analyse(inputs: dict) -> dict:
+    result = mon.add_course_detail(mon.score(inputs["features"]), inputs["courses"])
+    return {"result": result, "alerts": mon.build_alerts(inputs["courses"], result, inputs["missed"])}
+
+
+def _require_data(inputs: dict) -> None:
+    if not inputs["has_data"]:
+        raise HTTPException(status_code=409, detail="No attendance or grade data yet. Sync your SDU account first.")
+
+
+def record_current_risk(user) -> Optional[dict]:
+    """After a sync: remember the risk for the trend chart and send the e-mail alert when it is due."""
+    inputs = student_inputs(user.id, user.student_id)
+    if not inputs["has_data"]:
+        return None
+    analysis = analyse(inputs)
+    result = analysis["result"]
+    store.record_risk(_env["repo"], user.student_id, result["risk"], result["predicted_gpa"])
+    if notify.configured() and os.getenv("ALERTS_ENABLED", "1") != "0":
+        threading.Thread(target=send_risk_alert, args=(user.id, user.student_id, user.name), daemon=True).start()
+    return analysis
+
+
+def send_risk_alert(user_id: str, student_id: str, name: str, force: bool = False) -> dict:
+    """E-mail the student (and the curator, when one is set) if the risk is above the threshold."""
+    repo = _env["repo"]
+    inputs = student_inputs(user_id, student_id)
+    if not inputs["has_data"]:
+        return {"sent": False, "reason": "no data"}
+    analysis = analyse(inputs)
+    result, risk = analysis["result"], analysis["result"]["risk"]
+    if risk < notify.threshold():
+        return {"sent": False, "reason": f"risk {result['risk_percent']}% is below {round(notify.threshold() * 100)}%",
+                "risk_percent": result["risk_percent"]}
+    previous = store.last_alert(repo, student_id)
+    if previous and not force:
+        age = datetime.now(timezone.utc) - datetime.fromisoformat(previous["sent_at"])
+        if age < ALERT_COOLDOWN and risk < previous["risk"] + 0.15:
+            return {"sent": False, "reason": "already alerted recently", "risk_percent": result["risk_percent"]}
+    sender = notify.send_resend if notify.configured() else _env["fallback_sender"]
+    recipients = []
+    email = repo.get_email_for_user(user_id)
+    if email:
+        recipients.append((email, False))
+    curator = store.get_curator(repo, student_id)
+    if curator:
+        recipients.append((curator["email"], True))
+    sent_to, errors = [], []
+    for address, for_curator in recipients:
+        subject, text, html_body = notify.risk_email(name, result, analysis["alerts"], for_curator)
+        ok, reason = (sender(address, subject, text, html_body) if sender is notify.send_resend
+                      else sender(address, subject, text))
+        (sent_to if ok else errors).append(address if ok else f"{address}: {reason}")
+    if sent_to:
+        store.record_alert(repo, student_id, risk)
+        repo.add_notification(student_id, "risk_alert", "High academic risk",
+                              f"The risk model predicts {result['risk_percent']}% risk. See the Monitoring tab.", None)
+    return {"sent": bool(sent_to), "to": [a for a in sent_to], "errors": errors, "risk_percent": result["risk_percent"],
+            "reason": None if sent_to else (errors[0] if errors else "no e-mail address on file")}
+
+
+def run_scheduled_alerts() -> dict:
+    """Background job: check every student and send the alerts that are due."""
+    repo = _env["repo"]
+    with repo.connect() as db:
+        students = [dict(r) for r in db.execute(
+            "SELECT id, name, student_id FROM users WHERE role = 'student' AND student_id IS NOT NULL")]
+    sent = 0
+    for s in students:
+        try:
+            sent += bool(send_risk_alert(s["id"], s["student_id"], s["name"]).get("sent"))
+        except Exception:
+            log.exception("risk alert failed for %s", s["student_id"])
+    log.info("risk alert run: %d e-mail(s) for %d student(s)", sent, len(students))
+    return {"students": len(students), "sent": sent}
+
+
+_scheduler = None
+
+
+def start_scheduler() -> None:
+    """APScheduler in the app's own event loop; only runs when Resend is configured (ALERTS_ENABLED=0 turns it off)."""
+    global _scheduler
+    if _scheduler or not notify.configured() or os.getenv("ALERTS_ENABLED", "1") == "0":
+        return
+    from apscheduler.schedulers.asyncio import AsyncIOScheduler
+    _scheduler = AsyncIOScheduler(timezone="UTC")
+    minutes = max(5, int(os.getenv("ALERT_INTERVAL_MINUTES", "360")))
+    _scheduler.add_job(run_scheduled_alerts, "interval", minutes=minutes, id="risk-alerts",
+                       next_run_time=datetime.now(timezone.utc) + timedelta(minutes=2))
+    _scheduler.start()
+    log.info("risk e-mail alerts scheduled every %d minutes", minutes)
+
+
+def stop_scheduler() -> None:
+    global _scheduler
+    if _scheduler:
+        _scheduler.shutdown(wait=False)
+        _scheduler = None
+
+
+def build_router(*, repo, current_user: Callable, require_role: Callable, grades: Callable,
+                 last_synced: Callable, fallback_sender: Callable, teacher_scope: Callable, user_for_student: Callable) -> APIRouter:
+    """grades(student_id, user_id) -> {"scores", "names", "trend"}; last_synced(user_id) -> iso string or None."""
+    _env.update(repo=repo, grades=grades, fallback_sender=fallback_sender)
+    store.ensure(repo)
+    router = APIRouter(on_startup=[start_scheduler], on_shutdown=[stop_scheduler])
+    student = Depends(require_role("student"))
+
+    @router.get("/api/monitoring/overview")
+    def overview(user=student):
+        inputs = student_inputs(user.id, user.student_id)
+        base = {"has_data": inputs["has_data"], "data_source": inputs["source"], "last_synced": last_synced(user.id),
+                "model": {"version": ml.info()["version"]}}
+        if not inputs["has_data"]:
+            return {**base, "safe_to_skip": mon.safe_to_skip([]), "risk": None, "alerts": [], "history": []}
+        analysis = analyse(inputs)
+        store.record_risk(repo, user.student_id, analysis["result"]["risk"], analysis["result"]["predicted_gpa"]) \
+            if not store.risk_history(repo, user.student_id, 1) else None
+        return {**base, "safe_to_skip": mon.safe_to_skip(inputs["courses"]), "risk": analysis["result"],
+                "alerts": analysis["alerts"], "features": inputs["features"],
+                "history": store.risk_history(repo, user.student_id)}
+
+    @router.get("/api/monitoring/alerts")
+    def alerts(user=student):
+        inputs = student_inputs(user.id, user.student_id)
+        if not inputs["has_data"]:
+            return {"items": []}
+        return {"items": analyse(inputs)["alerts"]}
+
+    @router.post("/api/predict/risk")
+    def predict_risk(user=student):
+        inputs = student_inputs(user.id, user.student_id)
+        _require_data(inputs)
+        analysis = analyse(inputs)
+        store.record_risk(repo, user.student_id, analysis["result"]["risk"], analysis["result"]["predicted_gpa"])
+        return {**analysis["result"], "features": inputs["features"], "data_source": inputs["source"]}
+
+    @router.post("/api/simulate")
+    def simulate(req: SimulateRequest, user=student):
+        inputs = student_inputs(user.id, user.student_id)
+        _require_data(inputs)
+        if not inputs["courses"]:
+            raise HTTPException(status_code=409, detail="No class-hour data to simulate on. Sync your SDU account first.")
+        if req.course_code and req.course_code not in [c["code"] for c in inputs["courses"]]:
+            raise HTTPException(status_code=404, detail="Unknown course.")
+        return mon.simulate(inputs["courses"], inputs["scores"], inputs["trend"], inputs["missed"],
+                            req.lectures, req.practices, req.course_code)
+
+    @router.get("/api/monitoring/curator")
+    def get_curator(user=student):
+        return store.get_curator(repo, user.student_id) or {"email": None, "name": None}
+
+    @router.put("/api/monitoring/curator")
+    def put_curator(req: CuratorRequest, user=student):
+        store.set_curator(repo, user.student_id, req.email.strip(), req.name)
+        return {"ok": True, "email": req.email.strip(), "name": req.name}
+
+    @router.delete("/api/monitoring/curator")
+    def remove_curator(user=student):
+        store.delete_curator(repo, user.student_id)
+        return {"ok": True}
+
+    @router.post("/api/monitoring/notify")
+    def notify_now(user=student, force: bool = Query(False)):
+        return send_risk_alert(user.id, user.student_id, user.name, force=force)
+
+    @router.get("/api/monitoring/model")
+    def model_info(user=Depends(current_user)):
+        return ml.info()
+
+    @router.get("/api/teacher/monitoring/students")
+    def teacher_risk(user=Depends(require_role("teacher"))):
+        rows = []
+        for sid in sorted(teacher_scope(user)):
+            owner = user_for_student(sid)
+            if not owner:
+                continue
+            inputs = student_inputs(owner["id"], sid)
+            if not inputs["has_data"]:
+                continue
+            analysis = analyse(inputs)
+            r = analysis["result"]
+            rows.append({"student_id": sid, "name": owner["name"], "risk_percent": r["risk_percent"], "level": r["level"],
+                         "predicted_gpa": r["predicted_gpa"], "reasons": r["reasons"], "fx": r["fx"],
+                         "pending_hours": inputs["features"].get("pending_hours", 0)})
+        rows.sort(key=lambda x: -x["risk_percent"])
+        return {"items": rows, "needs_support": sum(x["risk_percent"] >= 50 for x in rows)}
+
+    return router

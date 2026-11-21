@@ -33,6 +33,7 @@ from . import academics
 from . import goals as goals_mod
 from . import summaries as summaries_mod
 from . import db as dbmod
+from . import monitoring_store, monitoring_api
 
 
 class SduAuthorizeRequest(BaseModel):
@@ -1396,6 +1397,7 @@ async def sdu_sync(user: Annotated[User, Depends(current_user)], auto: bool = Qu
         )
         repo.save_snapshot(user.id, "synced", {})
         refresh_goal_alerts(user)
+        monitoring_after_sync(user, sdu_mock.attendance().get("attendance"))
         return {"ok": True, "connected": True, "synced": True, "demo_mode": True, "updated_at": res.get("updated_at"),
                 "new_notifications": res.get("new_notifications", 0)}
 
@@ -1438,10 +1440,22 @@ async def sdu_sync(user: Annotated[User, Depends(current_user)], auto: bool = Qu
     )
     repo.save_snapshot(user.id, "synced", {})
     refresh_goal_alerts(user)
+    monitoring_after_sync(user, att_data.get("attendance") if isinstance(att_data, dict) else None)
     return {"ok": True, "connected": True, "synced": True, "updated_at": res.get("updated_at"), "new_notifications": res.get("new_notifications", 0)}
 
 
 AUTO_SYNC_INTERVAL_SECONDS = 10 * 60
+
+
+def monitoring_after_sync(user: User, attendance: Optional[list]) -> None:
+    """Keep the per-hour attendance log (incl. "Not submitted" hours) and refresh the risk history.
+
+    Never lets a monitoring problem break the SDU sync itself."""
+    try:
+        monitoring_store.save_attendance_log(repo, user.student_id, attendance)
+        monitoring_api.record_current_risk(user)
+    except Exception:
+        logging.getLogger("studymate.monitoring").exception("post-sync monitoring step failed")
 
 
 def seconds_since(iso_time: Optional[str]) -> float:
@@ -2509,6 +2523,41 @@ def attendance_performance(user: Annotated[User, Depends(require_role("teacher")
 # Admin panel (/admin page + /api/admin/*) must be registered before the SPA catch-all below.
 app.include_router(admin.create_admin_router(repo, sign, sdu_client.SDU_ORIGIN, sdu_client.SDU_CLIENT_ID,
                                             lambda to, subject, text: send_email(to, subject, text)))
+
+
+# ─── Monitoring tab, risk model and e-mail alerts (see monitoring_api.py) ────────────────────────
+def monitoring_grades(student_id: str, user_id: str) -> dict:
+    """Current course scores, names and the score trend (points per term) for the risk model."""
+    courses = student_courses(student_id, "spring-2026")
+    names = {c["code"]: c["course"] for c in courses}
+    by_term: dict[int, list[float]] = {}
+    for c in (repo.get_snapshot(user_id, "transcript") or {}).get("courses") or []:
+        try:
+            semester, percent = int(c.get("semester")), float(c.get("grade_percent") if c.get("grade_percent") is not None else c.get("grade"))
+        except (TypeError, ValueError):
+            continue
+        by_term.setdefault(semester, []).append(percent)
+    means = [sum(v) / len(v) for _, v in sorted(by_term.items())][-4:]
+    trend = None
+    if len(means) >= 2:
+        n = len(means)
+        mx, my = (n - 1) / 2, sum(means) / n
+        trend = sum((i - mx) * (m - my) for i, m in enumerate(means)) / sum((i - mx) ** 2 for i in range(n))
+    return {"scores": [c["score"] for c in courses if c["score"] is not None], "names": names, "trend": trend}
+
+
+def monitoring_user_for_student(student_id: str) -> Optional[dict]:
+    with repo.connect() as db:
+        row = db.execute("SELECT id, name FROM users WHERE student_id = ? AND role = 'student'", (student_id,)).fetchone()
+        return dict(row) if row else None
+
+
+app.include_router(monitoring_api.build_router(
+    repo=repo, current_user=current_user, require_role=require_role, grades=monitoring_grades,
+    last_synced=lambda user_id: (repo.get_sdu_connection(user_id) or {}).get("updated_at"),
+    fallback_sender=lambda to, subject, text: send_email(to, subject, text),
+    teacher_scope=lambda user: repo.teacher_scope.get(user.teacher_id, set()),
+    user_for_student=monitoring_user_for_student))
 
 
 # In production the frontend build is copied here by the container build.
