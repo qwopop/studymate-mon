@@ -1,5 +1,5 @@
 """Monitoring tab: pending ("Not submitted") status, risk model, SHAP reasons, simulation, alerts, e-mail."""
-from datetime import date, timedelta
+from datetime import date
 
 import pytest
 from fastapi.testclient import TestClient

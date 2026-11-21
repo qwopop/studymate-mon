@@ -1,1 +1,32 @@
-{"name":"student-monitoring-web","private":true,"version":"0.1.0","type":"module","scripts":{"dev":"vite","build":"vite build","preview":"vite preview","test":"node --test src/gpa.test.js src/schedule.test.js src/goals.test.js src/monitoring.test.js"},"dependencies":{"@vitejs/plugin-react":"latest","nodemailer":"^10.0.12","react":"latest","react-dom":"latest","recharts":"latest","typescript":"latest","vite":"latest"}}
+{
+  "name": "student-monitoring-web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "node --test src/gpa.test.js src/schedule.test.js src/goals.test.js src/monitoring.test.js && vitest run",
+    "test:unit": "node --test src/gpa.test.js src/schedule.test.js src/goals.test.js src/monitoring.test.js",
+    "test:component": "vitest run",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "latest",
+    "nodemailer": "^10.0.12",
+    "react": "latest",
+    "react-dom": "latest",
+    "recharts": "latest",
+    "typescript": "latest",
+    "vite": "latest"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@testing-library/jest-dom": "^8.0.0",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.13",
+    "jsdom": "^31.0.1",
+    "vitest": "^5.1.1"
+  }
+}

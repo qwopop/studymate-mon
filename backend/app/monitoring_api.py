@@ -18,7 +18,7 @@ import logging
 import os
 import threading
 from datetime import datetime, timedelta, timezone
-from typing import Annotated, Callable, Optional
+from typing import Callable, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Security
 from fastapi.security import HTTPBearer
