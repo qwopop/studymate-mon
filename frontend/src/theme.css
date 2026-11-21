@@ -1,0 +1,142 @@
+/* ============================================================
+   StudyMate purple theme (appearance only).
+   Loaded after styles.css: it re-colours the design tokens and softens shapes.
+   No layout, behaviour, charts or animations are changed here.
+   Remove the `import './theme.css'` line in main.jsx to get the old look back.
+   ============================================================ */
+
+/* ─── Light (default) ───────────────────────────────────────── */
+:root {
+  --bg:            #F1EEFF;
+  --surface:       #FFFFFF;
+  --surface-2:     #F5F2FF;
+  --surface-3:     #EAE5FC;
+  --border:        #E7E1F8;
+  --border-strong: #D4CBEF;
+
+  --text-primary:   #1C1636;
+  --text-secondary: #504877;
+  --text-muted:     #8B83AE;
+
+  --accent:        #7C3AED;
+  --accent-hover:  #6D28D9;
+  --accent-text:   #5B21B6;
+  --accent-soft:   rgba(124, 58, 237, 0.10);
+  --accent-ring:   rgba(124, 58, 237, 0.26);
+
+  --shadow-sm:  0 1px 2px rgba(76, 48, 160, 0.05);
+  --shadow-md:  0 10px 26px -8px rgba(76, 48, 160, 0.16), 0 2px 4px -2px rgba(76, 48, 160, 0.06);
+  --shadow-lg:  0 22px 50px -12px rgba(76, 48, 160, 0.26), 0 4px 10px -4px rgba(76, 48, 160, 0.08);
+
+  --radius-sm:  10px;
+  --radius:     12px;
+  --radius-lg:  18px;
+  --radius-xl:  24px;
+
+  --purple-grad: linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%);
+}
+
+/* ─── Dark ──────────────────────────────────────────────────── */
+[data-theme="dark"] {
+  --bg:            #120B26;
+  --surface:       #1A1334;
+  --surface-2:     #231A45;
+  --surface-3:     #2D2358;
+  --border:        #2B2150;
+  --border-strong: #3B2E6C;
+
+  --text-primary:   #F5F2FF;
+  --text-secondary: #BDB5DD;
+  --text-muted:     #8479AF;
+
+  --accent:        #8B5CF6;
+  --accent-hover:  #A78BFA;
+  --accent-text:   #C4B5FD;
+  --accent-soft:   rgba(139, 92, 246, 0.17);
+  --accent-ring:   rgba(139, 92, 246, 0.38);
+
+  --success:       #34D399;
+  --success-soft:  rgba(52, 211, 153, 0.13);
+  --warning:       #FBBF24;
+  --warning-soft:  rgba(251, 191, 36, 0.13);
+  --danger:        #FB7185;
+  --danger-soft:   rgba(251, 113, 133, 0.13);
+  --neutral:       #8479AF;
+  --neutral-soft:  rgba(132, 121, 175, 0.18);
+
+  --shadow-sm:  none;
+  --shadow-md:  0 10px 28px rgba(5, 2, 18, 0.5);
+  --shadow-lg:  0 24px 56px rgba(5, 2, 18, 0.65);
+}
+
+/* ─── Page background ───────────────────────────────────────── */
+body {
+  background:
+    radial-gradient(900px 520px at 0% 0%, rgba(167, 139, 250, 0.22), transparent 60%),
+    linear-gradient(165deg, #ECE7FF 0%, #F5F2FF 45%, #FAF9FF 100%);
+  background-attachment: fixed;
+}
+[data-theme="dark"] body {
+  background:
+    radial-gradient(900px 560px at 100% 100%, rgba(124, 58, 237, 0.30), transparent 62%),
+    linear-gradient(165deg, #1B1238 0%, #120B26 55%, #0F0A20 100%);
+  background-attachment: fixed;
+}
+
+/* ─── Sidebar ───────────────────────────────────────────────── */
+.sidebar { background: var(--surface); border-right-color: var(--border); }
+[data-theme="dark"] .sidebar { background: rgba(21, 14, 46, 0.92); }
+
+.brand-mark, [data-theme="dark"] .brand-mark { background: var(--purple-grad); color: #fff; border-radius: 11px; }
+.brand-text span { color: var(--text-muted); }
+
+.side-link { border-radius: 12px; height: 38px; }
+.side-link:hover { background: var(--accent-soft); color: var(--text-primary); }
+.side-link.active { background: #E9E2FF; color: var(--accent-text); font-weight: 600; }
+.side-link.active svg { color: var(--accent); }
+[data-theme="dark"] .side-link.active {
+  background: var(--purple-grad); color: #fff;
+  box-shadow: 0 8px 18px -8px rgba(124, 58, 237, 0.75);
+}
+[data-theme="dark"] .side-link.active svg { color: #fff; }
+.side-label { letter-spacing: .02em; }
+.side-foot { border-top-color: var(--border); }
+
+/* ─── Top bar ───────────────────────────────────────────────── */
+.avatar { background: var(--purple-grad); color: #fff; }
+
+/* ─── Cards ─────────────────────────────────────────────────── */
+.card { border-radius: var(--radius-lg); border-color: var(--border); }
+[data-theme="dark"] .card {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.01)), var(--surface);
+}
+
+/* Overview metric cards: lavender, mint and peach tints (light), tinted glass (dark) */
+.overview-stats .metric-grid > .metric:nth-child(1) { background: linear-gradient(135deg, #F1ECFF, #E3D9FF); border-color: #DCD0FA; }
+.overview-stats .metric-grid > .metric:nth-child(2) { background: linear-gradient(135deg, #EAFBF2, #D4F4E4); border-color: #C5EDDA; }
+.overview-stats .metric-grid > .metric:nth-child(3) { background: linear-gradient(135deg, #FFF3E8, #FFE6D0); border-color: #FBDCBF; }
+[data-theme="dark"] .overview-stats .metric-grid > .metric:nth-child(1) { background: linear-gradient(135deg, rgba(139, 92, 246, 0.24), rgba(139, 92, 246, 0.05)), var(--surface); border-color: #3A2C70; }
+[data-theme="dark"] .overview-stats .metric-grid > .metric:nth-child(2) { background: linear-gradient(135deg, rgba(52, 211, 153, 0.14), rgba(52, 211, 153, 0.03)), var(--surface); border-color: #243B52; }
+[data-theme="dark"] .overview-stats .metric-grid > .metric:nth-child(3) { background: linear-gradient(135deg, rgba(251, 191, 36, 0.14), rgba(251, 191, 36, 0.03)), var(--surface); border-color: #3E3050; }
+
+/* ─── Buttons, inputs, progress ─────────────────────────────── */
+.btn-primary, .btn-submit-primary { background: var(--purple-grad); border-radius: var(--radius); color: #fff; }
+.btn-primary:hover:not(:disabled), .btn-submit-primary:hover:not(:disabled) { background: linear-gradient(135deg, #9F7AF9 0%, #7C3AED 100%); }
+.btn-ghost { border-radius: var(--radius); border-color: var(--border); }
+.input, .select, .input-field { border-radius: var(--radius); }
+.fill-accent { background: var(--purple-grad); }
+.progress { background: var(--surface-3); }
+
+/* ─── Schedule day tabs ─────────────────────────────────────── */
+.day-tab { border-radius: 14px; border-color: var(--border); }
+.day-tab.active { background: #EAE3FF; border-color: var(--accent); }
+.day-tab.active span { color: var(--accent-text); }
+[data-theme="dark"] .day-tab.active { background: var(--purple-grad); border-color: transparent; box-shadow: 0 10px 22px -10px rgba(124, 58, 237, 0.8); }
+[data-theme="dark"] .day-tab.active span { color: #fff; }
+[data-theme="dark"] .day-tab.active small { color: rgba(255, 255, 255, 0.82); }
+
+/* ─── Mobile bottom bar ─────────────────────────────────────── */
+.bottom-link.active { color: var(--accent-text); }
+
+/* ─── Top bar: let the page gradient show through (no visible band) ─── */
+.topbar { background: color-mix(in srgb, var(--bg) 45%, transparent); }

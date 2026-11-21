@@ -5,6 +5,7 @@ import {
   Tooltip, XAxis, YAxis, Scatter, ScatterChart
 } from 'recharts'
 import './styles.css'
+import './theme.css'
 import { calcGPA, calcCompletedCredits, ectsOf } from './gpa.js'
 import { STATUS_LABEL, STATUS_TONE, checkTarget, progressPct, reachLine, serverFieldErrors, simulateCourse } from './goals.js'
 import { DifficultForecast, MonitoringTab, PredictedGpaWidget, SyncBar } from './Monitoring.jsx'
@@ -325,7 +326,7 @@ function useTheme() {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('sm_theme')
       if (stored) return stored
-      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+      return 'light'   // light is the default; the toggle switches to dark
     }
     return 'light'
   })
