@@ -37,6 +37,7 @@ class SimulateRequest(BaseModel):
     lectures: int = Field(default=0, ge=0, le=60)
     practices: int = Field(default=0, ge=0, le=60)
     course_code: Optional[str] = Field(default=None, max_length=40)
+    max_hours: Optional[int] = Field(default=None, ge=1, le=60, description="Length of the returned curve in skipped hours")
 
 
 class Reason(BaseModel):
@@ -281,7 +282,8 @@ def build_router(*, repo, current_user: Callable, require_role: Callable, grades
         if req.course_code and req.course_code not in [c["code"] for c in inputs["courses"]]:
             raise HTTPException(status_code=404, detail="Unknown course.")
         return mon.simulate(inputs["courses"], inputs["scores"], inputs["trend"], inputs["missed"],
-                            req.lectures, req.practices, req.course_code, current_gpa=inputs.get("gpa"))
+                            req.lectures, req.practices, req.course_code, current_gpa=inputs.get("gpa"),
+                            max_hours=req.max_hours)
 
     @router.get("/api/monitoring/curator")
     def get_curator(user=student):

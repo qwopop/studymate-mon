@@ -102,6 +102,9 @@ def course_status(course: dict) -> dict:
         "absence_pct": round(absent / course["hours"] * 100, 1),
         "used_pct": min(100, round(absent / limit * 100)) if limit else (100 if absent else 0),
         "level": level, "fx": left < 0,
+        # A course with few class hours has a small allowance, so each missed hour costs a larger share of it
+        "weekly_hours": round(course["hours"] / TERM_WEEKS, 1),
+        "cost_per_hour_pct": round(100 / limit) if limit else 100,
     }
 
 
@@ -143,30 +146,47 @@ def grade_features(scores: list[float], trend: Optional[float]) -> dict:
 
 
 PENDING_WEIGHT = 0.5      # a "Not submitted" hour counts as half an absence: it may still be marked absent
+TERM_WEEKS = 15           # an SDU term is about 15 weeks: class hours / 15 = hours a week
 
 
-def attendance_pressure(courses: list[dict]) -> float:
-    """How much of the allowed absences is used up in the worst course (1.0 = the FX limit is reached).
+def course_pressures(courses: list[dict]) -> list[float]:
+    """Per course: the share of its allowed absences already used (1.0 = the FX limit is reached).
 
-    This is SDU's own rule, not a learned pattern: the public data the model was trained on says almost nothing
-    about absences, so the effect of absences is applied here, in the open, on top of the model."""
-    worst = 0.0
+    A course with few class hours has a small allowance, so one missed hour is a big share of it; a course with
+    several lessons a week can absorb more. This is SDU's own rule, not a learned pattern: the public data the model
+    was trained on says almost nothing about absences, so the effect of absences is applied here, in the open."""
+    out = []
     for c in courses:
         limit = absence_limit(c["hours"])
         used = c["absent"] + PENDING_WEIGHT * c["pending"]
-        worst = max(worst, used / limit if limit else (1.25 if used > 0 else 0.0))
-    return round(min(worst, 1.25), 4)
+        out.append(round(min(used / limit if limit else (1.25 if used > 0 else 0.0), 1.25), 4))
+    return out
 
 
-def _pressure_effect(pressure: float) -> tuple[float, float]:
-    """(extra risk, GPA points lost) for a given absence pressure: smooth and rising, with a jump at FX."""
-    q = min(max(pressure, 0.0), 1.0)
-    return 0.85 * q ** 1.5, (0.9 if pressure > 1.0 else 0.6 * q ** 1.5)
+def attendance_pressure(courses: list[dict]) -> float:
+    """The worst course's pressure (used for the explanation)."""
+    return max(course_pressures(courses), default=0.0)
+
+
+def _pressure_effect(pressures: list[float]) -> tuple[float, float]:
+    """(extra risk, GPA points lost) over all courses: smooth and rising, a jump at FX, and several courses add up.
+
+    The worst course counts in full and every other course adds a quarter (risk) or a half (GPA) of its own effect."""
+    risks, pens = [], []
+    for p in pressures:
+        q = min(max(p, 0.0), 1.0)
+        risks.append(0.85 * q ** 1.5)
+        pens.append(0.9 if p > 1.0 else 0.6 * q ** 1.5)
+    if not risks:
+        return 0.0, 0.0
+    extra = min(0.95, max(risks) + 0.25 * (sum(risks) - max(risks)))
+    return extra, min(1.8, max(pens) + 0.5 * (sum(pens) - max(pens)))
 
 
 def apply_attendance_rules(risk: float, gpa: float, features: dict) -> tuple[float, float]:
     """Combine the model's risk and GPA with the absence rule (independent risks: 1 - (1 - a)(1 - b))."""
-    extra_risk, penalty = _pressure_effect(features.get("attendance_pressure") or 0.0)
+    pressures = features.get("course_pressures") or [features.get("attendance_pressure") or 0.0]
+    extra_risk, penalty = _pressure_effect(pressures)
     return 1 - (1 - risk) * (1 - extra_risk), max(0.0, gpa - penalty)
 
 
@@ -174,7 +194,8 @@ def build_features(courses: list[dict], scores: list[float], trend: Optional[flo
                    current_gpa: Optional[float] = None) -> dict:
     out = {**attendance_features(courses), **grade_features(scores, trend), "missed_deadlines": float(missed_deadlines or 0)}
     if courses:
-        out["attendance_pressure"] = attendance_pressure(courses)   # not a model input: drives the absence rule
+        out["course_pressures"] = course_pressures(courses)         # not model inputs: they drive the absence rule
+        out["attendance_pressure"] = max(out["course_pressures"], default=0.0)
     if current_gpa is not None:
         out["current_gpa"] = float(current_gpa)        # not a model input: the anchor for the predicted GPA
     return out
@@ -249,7 +270,7 @@ def _apply_skips(courses: list[dict], hours: float, course_code: Optional[str]) 
 
 def simulate(courses: list[dict], scores: list[float], trend: Optional[float], missed: int,
              lectures: int, practices: int, course_code: Optional[str] = None, curve_points: int = 10,
-             current_gpa: Optional[float] = None) -> dict:
+             current_gpa: Optional[float] = None, max_hours: Optional[int] = None) -> dict:
     hours = lectures * HOURS_PER_CLASS["lecture"] + practices * HOURS_PER_CLASS["practice"]
     now_features = build_features(courses, scores, trend, missed, current_gpa)
     before = score(now_features)
@@ -266,17 +287,22 @@ def simulate(courses: list[dict], scores: list[float], trend: Optional[float], m
     newly_fx = [c for c in fx_courses if c not in [s["code"] or s["name"] for s in safe_to_skip(courses)["items"] if s["fx"]]]
 
     # Curve: risk and GPA for 0..N skipped hours on the same target, to draw the drop
-    steps = max(curve_points, int(math.ceil(hours)) + 2)
+    steps = max_hours if max_hours else max(curve_points, int(math.ceil(hours)) + 2)
     curve_courses = [_apply_skips(courses, h, course_code) for h in range(steps + 1)]
+    feats = [build_features(cs, scores, trend, missed, current_gpa) for cs in curve_courses]
+    predictions = ml.predict_many(feats)                                    # one batch instead of one call per point
     curve = []
     floor_risk, ceiling_gpa = before["risk"], before["predicted_gpa"]      # every point starts from today's values
-    for h, cs in enumerate(curve_courses):
-        f = build_features(cs, scores, trend, missed, current_gpa)
+    for h, (cs, f, raw) in enumerate(zip(curve_courses, feats, predictions)):
         guard = f.get("max_absence_pct", 0) >= ABSENCE_LIMIT_PCT
-        r, g = apply_attendance_rules(*ml.predict_many([f])[0], f)
+        r, g = apply_attendance_rules(*raw, f)
         floor_risk = max(floor_risk, 0.9 if guard else r)                   # only ever rises with more skipped hours
         ceiling_gpa = min(ceiling_gpa, g)                                   # only ever falls
-        curve.append({"hours": h, "risk": round(floor_risk, 4), "predicted_gpa": round(ceiling_gpa, 2), "fx": guard})
+        curve.append({"hours": h, "risk": round(floor_risk, 4), "predicted_gpa": round(ceiling_gpa, 2), "fx": guard,
+                      "fx_courses": [c["code"] or c["name"] for c in safe_to_skip(cs)["items"] if c["fx"]]})
+    target = [course_status(c) for c in courses if not course_code or c["code"] == course_code]
+    most_sensitive = min(target, key=lambda c: c["limit"]) if target else None     # smallest allowance = highest cost per hour
+    course_cost = {k: most_sensitive[k] for k in ("code", "name", "hours", "weekly_hours", "limit", "cost_per_hour_pct")} if most_sensitive else None
     return {
         "skipped_hours": _int(hours), "lectures": lectures, "practices": practices, "course": course_code,
         "before": _brief(before), "after": _brief(after),
@@ -284,6 +310,7 @@ def simulate(courses: list[dict], scores: list[float], trend: Optional[float], m
         "risk_change": after["risk_percent"] - before["risk_percent"],
         "fx_courses": fx_courses, "newly_fx_courses": newly_fx,
         "safe_to_skip": status_after, "reasons": after["reasons"], "curve": curve,
+        "course_cost": course_cost, "hours_per_class": dict(HOURS_PER_CLASS),
         "message": _sim_message(after, hours, fx_courses),
     }
 

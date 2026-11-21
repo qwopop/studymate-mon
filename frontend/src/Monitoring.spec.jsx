@@ -30,10 +30,12 @@ const overview = (over = {}) => ({
 })
 
 const simulation = {
-  skipped_hours: 3, lectures: 2, practices: 1,
-  before: { risk_percent: 62, predicted_gpa: 2.4 }, after: { risk_percent: 80, predicted_gpa: 2.1 },
-  gpa_change: -0.3, risk_change: 18, fx_courses: [], message: 'New predicted GPA: 2.1. Dropout risk: 80%.',
-  curve: [{ hours: 0, risk: 0.62, predicted_gpa: 2.4, fx: false }, { hours: 3, risk: 0.8, predicted_gpa: 2.1, fx: false }],
+  skipped_hours: 0, lectures: 0, practices: 0, hours_per_class: { lecture: 1, practice: 1 },
+  before: { risk_percent: 0, predicted_gpa: 3 }, after: { risk_percent: 0, predicted_gpa: 3 },
+  gpa_change: 0, risk_change: 0, fx_courses: [], message: 'New predicted GPA: 3.0. Dropout risk: 0%.',
+  course_cost: { code: 'INF 451', name: 'Databases', hours: 15, weekly_hours: 1, limit: 4, cost_per_hour_pct: 25 },
+  // risk 5 points and 0.1 GPA per skipped hour; the 10th hour is FX
+  curve: Array.from({ length: 31 }, (_, h) => ({ hours: h, risk: Math.min(0.9, h * 0.05), predicted_gpa: Math.max(0, 3 - h * 0.1), fx: h >= 10, fx_courses: h >= 10 ? ['INF 451'] : [] })),
 }
 
 const makeApi = (data = overview()) => vi.fn(async (path) => {
@@ -81,18 +83,31 @@ describe('MonitoringTab', () => {
     await waitFor(() => expect(api.mock.calls.filter(c => c[0] === '/api/monitoring/overview').length).toBeGreaterThanOrEqual(2))
   })
 
-  it('asks the simulation endpoint with the chosen sliders and shows the answer', async () => {
+  it('loads the curve once per course and answers the sliders locally and instantly', async () => {
     const api = makeApi()
     render(<MonitoringTab api={api} token="tok" sduStatus={connected} onConnect={() => {}} onSync={async () => {}} />)
     const lectures = await screen.findByLabelText(/Lectures to skip/)
-    fireEvent.change(lectures, { target: { value: '5' } })
-    await waitFor(() => {
-      const call = api.mock.calls.filter(c => c[0] === '/api/simulate').at(-1)
-      expect(call).toBeTruthy()
-      expect(JSON.parse(call[2].body)).toMatchObject({ lectures: 5, practices: 1 })
-      expect(call[1]).toBe('tok')
-    })
-    expect(await screen.findByText('New predicted GPA: 2.1. Dropout risk: 80%.')).toBeInTheDocument()
+    await screen.findByText('New predicted GPA: 2.7. Dropout risk: 15%.')              // 2 lectures + 1 practice = 3 hours
+    const calls = () => api.mock.calls.filter(c => c[0] === '/api/simulate')
+    expect(calls()).toHaveLength(1)
+    expect(JSON.parse(calls()[0][2].body)).toMatchObject({ lectures: 0, practices: 0, max_hours: 30 })
+    expect(calls()[0][1]).toBe('tok')
+
+    fireEvent.change(lectures, { target: { value: '5' } })                              // 6 hours: no new request
+    expect(await screen.findByText('New predicted GPA: 2.4. Dropout risk: 30%.')).toBeInTheDocument()
+    expect(calls()).toHaveLength(1)
+
+    fireEvent.change(lectures, { target: { value: '9' } })                              // 10 hours: FX
+    expect(await screen.findByText(/puts INF 451 over the 30% absence limit \(FX\)/)).toBeInTheDocument()
+  })
+
+  it('asks again only when the course changes, and explains the cost of one missed hour', async () => {
+    const api = makeApi()
+    render(<MonitoringTab api={api} token="t" sduStatus={connected} onConnect={() => {}} onSync={async () => {}} />)
+    expect(await screen.findByText(/Databases has about 1 class hour a week \(15 in the term\), so one missed hour uses 25% of the 4 absences allowed before FX\./)).toBeInTheDocument()
+    fireEvent.change(await screen.findByLabelText('Course'), { target: { value: '' } })
+    await waitFor(() => expect(api.mock.calls.filter(c => c[0] === '/api/simulate')).toHaveLength(2))
+    expect(await screen.findByText(/^Most sensitive course: Databases has about 1 class hour a week/)).toBeInTheDocument()
   })
 
   it('invites the student to connect SDU when there is nothing to show', async () => {

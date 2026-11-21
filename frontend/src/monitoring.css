@@ -82,3 +82,7 @@
 .mon-summary { margin: 14px 0 0; font-size: 14.5px; line-height: 1.55; color: var(--text-primary); }
 .mon-helping li b { color: var(--success); }
 .mon-helping .mon-reason-bar i { background: var(--success); }
+
+/* Simulation: cost of one missed hour, and the empty risk history */
+.mon-cost { margin: 14px 0 0; padding: 10px 12px; border-radius: 12px; background: var(--accent-soft); font-size: 13px; line-height: 1.5; color: var(--text-secondary); }
+.mon-hist-empty { margin: 16px 0 0; font-size: 13px; color: var(--text-muted); }
