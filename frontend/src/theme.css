@@ -413,7 +413,7 @@ button:focus-visible, a:focus-visible, .side-link:focus-visible, .day-tab:focus-
    --login-photo: url('/sdu-campus.jpg');   (see :root below)
    ============================================================ */
 :root {
-  --login-photo: none;
+  --login-photo: url('/sdu-campus.jpg');
   --login-card-bg: rgba(255, 255, 255, .74);
   --login-card-edge: rgba(255, 255, 255, .85);
 }
@@ -422,15 +422,19 @@ button:focus-visible, a:focus-visible, .side-link:focus-visible, .day-tab:focus-
   --login-card-edge: rgba(155, 92, 255, .32);
 }
 
-.login-page { position: relative; isolation: isolate; overflow: hidden; background: transparent; }
-.login-page::before {            /* sky + photo layer */
-  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+.login-page {
+  position: relative; isolation: isolate; overflow: hidden;
   background:
-    var(--login-photo) 62% 55% / cover no-repeat,
     radial-gradient(60% 45% at 62% 8%, rgba(150, 190, 255, .55), transparent 70%),
     radial-gradient(40% 30% at 85% 30%, rgba(255, 255, 255, .8), transparent 70%),
     radial-gradient(35% 25% at 45% 22%, rgba(255, 255, 255, .7), transparent 70%),
     linear-gradient(180deg, #D8E4FF 0%, #E6E2FF 48%, #F5F3FF 100%);
+}
+.login-page::before {            /* campus photo, bottom-anchored, top edge dissolves into the sky */
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 36.5vw; z-index: -1; pointer-events: none;
+  background: var(--login-photo) center / 100% 100% no-repeat;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 38%);
+          mask-image: linear-gradient(to bottom, transparent 0, #000 38%);
 }
 .login-page::after {             /* fade so the left copy stays readable, plus lavender swoosh at the bottom */
   content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
@@ -438,13 +442,13 @@ button:focus-visible, a:focus-visible, .side-link:focus-visible, .day-tab:focus-
     linear-gradient(90deg, rgba(245, 243, 255, .96) 0%, rgba(245, 243, 255, .72) 30%, rgba(245, 243, 255, 0) 58%),
     radial-gradient(120% 40% at 40% 112%, rgba(155, 120, 255, .38), transparent 70%);
 }
-[data-theme="dark"] .login-page::before {
+[data-theme="dark"] .login-page {
   background:
-    var(--login-photo) 62% 55% / cover no-repeat,
     radial-gradient(55% 45% at 62% 30%, rgba(120, 90, 255, .45), transparent 70%),
     radial-gradient(40% 30% at 90% 85%, rgba(193, 92, 255, .30), transparent 70%),
     linear-gradient(180deg, #1B1450 0%, #241A5E 50%, #120E33 100%);
 }
+[data-theme="dark"] .login-page::before { filter: brightness(.62) saturate(1.1) hue-rotate(-8deg); }
 [data-theme="dark"] .login-page::after {
   background:
     linear-gradient(90deg, rgba(14, 10, 40, .94) 0%, rgba(14, 10, 40, .6) 32%, rgba(14, 10, 40, 0) 60%),
