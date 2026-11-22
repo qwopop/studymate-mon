@@ -368,8 +368,7 @@ button:focus-visible, a:focus-visible, .side-link:focus-visible, .day-tab:focus-
   isolation: isolate;
 }
 /* on the login headline keep the page's own typography */
-/* each headline line is its own veil box */
-.login-hero h1 .fx-lightleak { display: block; width: fit-content; font: inherit; letter-spacing: inherit; line-height: inherit; }
+.login-hero h1.fx-lightleak { width: fit-content; font: inherit; font-size: 46px; line-height: 1.08; letter-spacing: -0.035em; font-weight: 700; }
 .fx-lightleak::before,
 .fx-lightleak::after {
   content: attr(data-text);
