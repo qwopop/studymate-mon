@@ -357,3 +357,50 @@ button:focus-visible, a:focus-visible, .side-link:focus-visible, .day-tab:focus-
   .btn-glass:hover:not(:disabled)::after { animation: none; }
   .btn-glass:hover:not(:disabled)::before { transform: none; }
 }
+
+/* ─── 68 Light-Leak — colour veils wash diagonally through the text ─── */
+:root { --ink: currentColor; --ink-2: #FF4FD8; --ink-3: #4FF8FF; }
+.fx-lightleak {
+  position: relative;
+  font: 600 34px/1.05 "JetBrains Mono", monospace;
+  letter-spacing: .1em;
+  color: var(--ink);
+  isolation: isolate;
+}
+/* on the login headline keep the page's own typography */
+.login-hero h1.fx-lightleak { font: inherit; font-size: 46px; line-height: 1.08; letter-spacing: -0.035em; font-weight: 700; }
+.fx-lightleak::before,
+.fx-lightleak::after {
+  content: attr(data-text);
+  white-space: pre-line;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  mix-blend-mode: screen;
+}
+.fx-lightleak::before {
+  background: linear-gradient(118deg, transparent 12%, #ff5a1f 34%, #ffd27a 44%, #fff 48%, transparent 62%) 120% 0 / 240% 100%;
+  -webkit-background-clip: text; background-clip: text;
+  filter: blur(.35px);
+  animation: fx-lightleak-a 4.4s ease-in-out infinite;
+}
+.fx-lightleak::after {
+  background: linear-gradient(248deg, transparent 18%, var(--ink-3) 38%, var(--ink-2) 48%, transparent 68%) -20% 0 / 240% 100%;
+  -webkit-background-clip: text; background-clip: text;
+  opacity: .9;
+  animation: fx-lightleak-b 5.6s ease-in-out infinite;
+}
+@keyframes fx-lightleak-a {
+  0%, 100% { background-position: 130% 0; opacity: .12; }
+  42%      { background-position: -30% 0; opacity: 1; }
+}
+@keyframes fx-lightleak-b {
+  0%, 100% { background-position: -30% 0; opacity: .1; }
+  55%      { background-position: 130% 0; opacity: .95; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fx-lightleak::before, .fx-lightleak::after { animation: none; opacity: 0; }
+}

@@ -1122,7 +1122,7 @@ function Login({ onLogin, theme, toggleTheme }) {
         <Brand subtitle="SDU student" />
 
         <div className="login-hero">
-          <h1>Your studies,<br />at a glance.</h1>
+          <h1 className="fx-lightleak" data-text={"Your studies,\nat a glance."}>Your studies,<br />at a glance.</h1>
           <p>Grades, schedule and attendance from SDU — in one calm place.</p>
           <ul className="login-points">
             <li><Icons.Check size={16} /> Know your next class</li>
