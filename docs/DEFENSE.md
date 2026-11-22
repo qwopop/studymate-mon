@@ -9,11 +9,11 @@ StudyMate reads a student's attendance and grades from the SDU portal and warns 
 
 | Level | What | Tool | Count | Run |
 |---|---|---|---|---|
-| Unit (backend) | GPA, forecast, goals, parsers, risk maths, model features | pytest | in the 210 | `cd backend && python -m pytest -v` |
-| Integration (backend) | every API endpoint through the real app and a real database | pytest + `fastapi.testclient.TestClient` | in the 210 | same |
-| Coverage | | pytest-cov | **83 %** of `app/` | `python -m pytest --cov=app --cov-report=term-missing` |
+| Unit (backend) | GPA, forecast, goals, parsers, risk maths, model features | pytest | in the 248 | `cd backend && python -m pytest -v` |
+| Integration (backend) | every API endpoint through the real app and a real database | pytest + `fastapi.testclient.TestClient` | in the 248 | same |
+| Coverage | | pytest-cov | **84 %** of `app/` | `python -m pytest --cov=app --cov-report=term-missing` |
 | Unit (frontend) | GPA, schedule, goals, monitoring helpers | `node --test` | 24 | `cd frontend && npm run test:unit` |
-| Component (frontend) | Monitoring tab, sync bar, GPA widget, forecast chart | Vitest + React Testing Library | 13 | `npm run test:component` |
+| Component (frontend) | Monitoring tab, sync bar, GPA widget, forecast chart | Vitest + React Testing Library | 14 | `npm run test:component` |
 | End-to-end | log in → Monitoring → sliders → Sync, in a real browser against the real backend | Playwright | 4 | `npx playwright install chromium` once, then `npm run test:e2e` |
 
 `npm test` runs the unit and component tests together.
@@ -43,8 +43,8 @@ Tests that show care for the risky parts: `test_sdu_password_is_found_nowhere_in
 See `docs/DATABASE.md` (ERD, the `pending` status, name mapping, security). In short: SQLite locally, PostgreSQL on Neon through `DATABASE_URL`; plain parameterized SQL (no ORM, say so); `attendance_log.status` stores `pending`; `risk_history` is the prediction history; SDU passwords are never stored and a test proves it.
 
 ## 4 · Demo script (10 minutes)
-1. `cd backend && python -m pytest -q --cov=app` → 210 green, 83 %.
-2. `cd frontend && npm test` → 24 + 13 green. Optionally `npm run test:e2e`.
+1. `cd backend && python -m pytest -q --cov=app` → 248 green, 84 %.
+2. `cd frontend && npm test` → 29 + 14 green. Optionally `npm run test:e2e`.
 3. Start backend, open `/docs`, *Authorize*, run `POST /api/predict/risk` and `POST /api/simulate` (`{"lectures":2,"practices":1}`).
 4. Open the app → Monitoring: Safe-to-Skip bars, risk explanation, simulation chart, alerts, Sync.
 5. Show `backend/app/ml/train.py`, `models/metrics.json`, the SHAP code in `ml/model.py`.
