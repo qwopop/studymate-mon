@@ -368,7 +368,7 @@ button:focus-visible, a:focus-visible, .side-link:focus-visible, .day-tab:focus-
   isolation: isolate;
 }
 /* on the login headline keep the page's own typography */
-.login-hero h1.fx-lightleak { font: inherit; font-size: 46px; line-height: 1.08; letter-spacing: -0.035em; font-weight: 700; }
+.login-hero h1.fx-lightleak { width: fit-content; font: inherit; font-size: 46px; line-height: 1.08; letter-spacing: -0.035em; font-weight: 700; }
 .fx-lightleak::before,
 .fx-lightleak::after {
   content: attr(data-text);
@@ -377,19 +377,20 @@ button:focus-visible, a:focus-visible, .side-link:focus-visible, .day-tab:focus-
   inset: 0;
   pointer-events: none;
   color: transparent;
-  -webkit-background-clip: text;
-  background-clip: text;
+  /* the shorthand backgrounds below reset the clip, so the veils paint as
+     soft rectangular washes over the word, exactly like the reference */
   mix-blend-mode: screen;
 }
+/* screen is invisible on a light page, so the veils multiply there */
+:root:not([data-theme="dark"]) .fx-lightleak::before,
+:root:not([data-theme="dark"]) .fx-lightleak::after { mix-blend-mode: multiply; }
 .fx-lightleak::before {
   background: linear-gradient(118deg, transparent 12%, #ff5a1f 34%, #ffd27a 44%, #fff 48%, transparent 62%) 120% 0 / 240% 100%;
-  -webkit-background-clip: text; background-clip: text;
   filter: blur(.35px);
   animation: fx-lightleak-a 4.4s ease-in-out infinite;
 }
 .fx-lightleak::after {
   background: linear-gradient(248deg, transparent 18%, var(--ink-3) 38%, var(--ink-2) 48%, transparent 68%) -20% 0 / 240% 100%;
-  -webkit-background-clip: text; background-clip: text;
   opacity: .9;
   animation: fx-lightleak-b 5.6s ease-in-out infinite;
 }
