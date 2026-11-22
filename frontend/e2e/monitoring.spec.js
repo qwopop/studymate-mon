@@ -30,11 +30,14 @@ test('Monitoring tab shows safe-to-skip, AI risk, simulation and alerts', async 
   await expect(page.getByText(/^Your risk is \d+%/)).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Alerts', exact: true })).toBeVisible()
 
-  // moving a slider asks the backend again and the answer is shown
-  const answer = page.waitForResponse(r => r.url().endsWith('/api/simulate') && r.request().method() === 'POST')
-  await page.getByLabel(/Lectures to skip/).fill('6')
-  expect((await answer).status()).toBe(200)
+  // the curve is loaded once; moving a slider updates the numbers at once, without another request
   await expect(page.getByText(/New predicted GPA: [\d.]+\./)).toBeVisible()
+  const before = await page.locator('.mon-sim-msg').textContent()
+  let requests = 0
+  page.on('request', r => { if (r.url().endsWith('/api/simulate')) requests += 1 })
+  await page.getByLabel(/Lectures to skip/).fill('9')
+  await expect(page.locator('.mon-sim-msg')).not.toHaveText(before)
+  expect(requests).toBe(0)
 })
 
 test('Sync button refreshes the data and updates "Last synced"', async ({ page, request }) => {

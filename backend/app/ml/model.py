@@ -120,11 +120,24 @@ def predict(features: dict, top: int = 3) -> dict:
 
 
 def predict_many(rows: list[dict]) -> list[tuple[float, float]]:
-    """(risk, predicted_gpa) for many feature dicts at once, e.g. for the simulation curve."""
+    """(risk, predicted_gpa) for many feature dicts at once, e.g. for the simulation curve.
+
+    Fully batched: one classifier call and two regressor calls for all rows, same numbers as predict()."""
+    if not rows:
+        return []
     bundle = load()
-    X = np.array([vector(r) for r in rows])
+    full = [complete(r) for r in rows]
+    X = np.array([vector(f) for f in full])
     risks = bundle["classifier"].predict_proba(X)[:, 1]
-    return [(float(a), _gpa(bundle, r)[0]) for a, r in zip(risks, rows)]
+    raw = bundle["regressor"].predict(X)
+    anchored = [i for i, r in enumerate(rows) if isinstance(r.get("current_gpa"), (int, float)) and r["current_gpa"] == r["current_gpa"]]
+    gpas = np.clip(raw, 0.0, 4.0)
+    if anchored:
+        neutral = np.array([vector({**full[i], **NEUTRAL}) for i in anchored])
+        base = bundle["regressor"].predict(neutral)
+        for k, i in enumerate(anchored):
+            gpas[i] = clamp(float(rows[i]["current_gpa"]) + min(0.0, float(raw[i] - base[k])), 0.0, 4.0)
+    return [(float(a), float(b)) for a, b in zip(risks, gpas)]
 
 
 def info() -> dict:

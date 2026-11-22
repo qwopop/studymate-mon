@@ -355,3 +355,52 @@ def test_resend_test_sender_restriction_is_explained(monkeypatch):
     monkeypatch.setattr(notify.httpx, "post", lambda *a, **k: _Resp(403, body))
     sent, why = notify.send_resend("friend@sdu.edu.kz", "s", "t")
     assert not sent and "same address" in why and "verify your own domain" in why
+
+
+def test_batched_predictions_match_the_single_ones():
+    rows = [{"max_absence_pct": a, "avg_grade": g, "current_gpa": cg} for a, g, cg in ((0, 80, 3.2), (12, 62, None), (25, 90, 3.8), (5, 55, 1.9))]
+    for row, (risk, gpa) in zip(rows, ml.predict_many(rows), strict=True):
+        single = ml.predict(row)
+        assert risk == pytest.approx(single["risk"], abs=1e-4) and gpa == pytest.approx(single["predicted_gpa"], abs=1e-2)
+    assert ml.predict_many([]) == []
+
+
+def _course(hours):
+    return [{"code": "X", "name": "Course", "hours": hours, "present": hours // 3, "absent": 0, "permitted": 0, "pending": 0, "remaining": hours * 2 // 3}]
+
+
+def test_one_missed_hour_costs_more_in_a_course_with_fewer_weekly_lessons():
+    one, three = (mon.simulate(_course(h), [75], 0, 0, 1, 0, "X", current_gpa=2.67, max_hours=12) for h in (15, 45))
+    assert one["course_cost"]["weekly_hours"] == 1.0 and three["course_cost"]["weekly_hours"] == 3.0
+    assert one["course_cost"]["cost_per_hour_pct"] > 2 * three["course_cost"]["cost_per_hour_pct"]      # 25% against 8% of the allowance
+    assert one["risk_change"] >= 3 * three["risk_change"] and one["gpa_change"] < three["gpa_change"]    # 1 absence: 11% against 2% risk
+
+
+def test_simulation_curve_length_follows_max_hours_and_names_fx_courses():
+    sim = mon.simulate(_course(15), [75], 0, 0, 0, 0, "X", current_gpa=2.67, max_hours=30)
+    assert len(sim["curve"]) == 31 and sim["hours_per_class"] == {"lecture": 1.0, "practice": 1.0}
+    first_fx = next(p for p in sim["curve"] if p["fx"])
+    assert first_fx["fx_courses"] == ["X"] and first_fx["hours"] == 5                              # limit 4: the 5th hour is FX
+
+
+def test_simulate_endpoint_accepts_max_hours(demo_student):
+    body = client.post("/api/simulate", json={"lectures": 0, "practices": 0, "max_hours": 24}, headers=auth(demo_student)).json()
+    assert len(body["curve"]) == 25 and body["course_cost"]["cost_per_hour_pct"] >= 1
+    assert client.post("/api/simulate", json={"max_hours": 99}, headers=auth(demo_student)).status_code == 422
+
+
+def test_absences_in_several_courses_add_up_but_the_worst_course_counts_most():
+    base = [{"code": c, "name": c, "hours": 45, "present": 20, "absent": 0, "permitted": 0, "pending": 0, "remaining": 25} for c in "ABC"]
+    one = [{**base[0], "absent": 6}, base[1], base[2]]
+    three = [{**c, "absent": 6} for c in base]
+    r1, r3 = (mon.score(mon.build_features(cs, [75], 0, 0, 2.8))["risk"] for cs in (one, three))
+    assert r3 > r1 > mon.score(mon.build_features(base, [75], 0, 0, 2.8))["risk"]       # more courses = more risk
+    assert mon._pressure_effect([0.5, 0.5, 0.5])[0] < 3 * mon._pressure_effect([0.5])[0]   # ...but not three times as much
+
+
+def test_a_missed_hour_in_any_course_moves_the_overall_risk_at_once():
+    worst = {"code": "A", "name": "A", "hours": 45, "present": 20, "absent": 9, "permitted": 0, "pending": 0, "remaining": 16}
+    other = {"code": "B", "name": "B", "hours": 45, "present": 20, "absent": 0, "permitted": 0, "pending": 0, "remaining": 25}
+    sim = mon.simulate([worst, other], [75], 0, 0, 1, 0, "B", current_gpa=2.8, max_hours=5)
+    assert sim["curve"][1]["risk"] > sim["curve"][0]["risk"]                              # the very first hour counts
+    assert sim["curve"][3]["predicted_gpa"] < sim["curve"][0]["predicted_gpa"]            # and the GPA follows within a few hours

@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis, Bar, BarChart, Cell } from 'recharts'
+import { Area, CartesianGrid, ComposedChart, Line, LineChart, ReferenceArea, ReferenceDot, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis, Bar, BarChart, Cell } from 'recharts'
 import './monitoring.css'
-import { LEVEL_TONE, RISK_TONE, SEVERITY_LABEL, SEVERITY_TONE, curveRows, lastSyncedLabel, riskTone, signed, skipLine } from './monitoring.js'
+import { LEVEL_TONE, RISK_TONE, SEVERITY_LABEL, SEVERITY_TONE, costLine, curveRows, lastSyncedLabel, riskTone, signed, simulationView, skipLine, skippedHours } from './monitoring.js'
 
 /* Monitoring tab, "Sync with SDU" bar and the AI widgets.
    `api` is the app's fetch helper (passed in so this file does not import main.jsx). */
@@ -139,6 +139,7 @@ function RiskCard({ risk, history }) {
         </>
       )}
       <p className="footnote">Explained with SHAP: how many percentage points each factor adds to (red) or takes off (green) your risk.</p>
+      {trend.length < 2 && <p className="mon-hist-empty">Risk over time appears here after a few syncs.</p>}
       {trend.length >= 2 && (
         <div className="mon-trend" aria-label="Risk over time">
           <h3 className="mon-sub">Risk over time</h3>
@@ -165,25 +166,36 @@ function Slider({ id, label, value, onChange, max = 12 }) {
   )
 }
 
+const CURVE_HOURS = 30       // the server sends the whole curve once; the sliders then work on it locally
+
 function Simulation({ api, token, courses }) {
   const [lectures, setLectures] = useState(2)
   const [practices, setPractices] = useState(1)
   const [course, setCourse] = useState(courses[0]?.code || '')   // the course closest to its limit
-  const [sim, setSim] = useState(null)
+  const [data, setData] = useState(null)
   const [error, setError] = useState('')
-  const seq = useRef(0)
 
+  // One request per course (not per slider move): the curve for 0..30 skipped hours
   useEffect(() => {
-    const mine = ++seq.current
-    const timer = setTimeout(() => {          // wait for the slider to settle before asking the server
-      api('/api/simulate', token, { method: 'POST', body: JSON.stringify({ lectures, practices, course_code: course || null }) })
-        .then(r => { if (mine === seq.current) { setSim(r); setError('') } })
-        .catch(e => { if (mine === seq.current) setError(e.message) })
-    }, 250)
-    return () => clearTimeout(timer)
-  }, [api, token, lectures, practices, course])
+    let alive = true
+    api('/api/simulate', token, { method: 'POST', body: JSON.stringify({ lectures: 0, practices: 0, course_code: course || null, max_hours: CURVE_HOURS }) })
+      .then(r => { if (alive) { setData(r); setError('') } })
+      .catch(e => { if (alive) setError(e.message) })
+    return () => { alive = false }
+  }, [api, token, course])
 
-  const rows = useMemo(() => curveRows(sim?.curve), [sim])
+  const hours = skippedHours(lectures, practices, data?.hours_per_class)
+  const view = useMemo(() => (data ? simulationView(data.curve, hours) : null), [data, hours])
+  const rows = useMemo(() => {
+    const all = curveRows(data?.curve)
+    const fxAt = all.findIndex(r => r.fx)
+    const last = Math.min(all.length - 1, Math.max(10, Math.ceil(hours) + 3, fxAt >= 0 ? fxAt + 3 : 0))
+    return all.slice(0, last + 1)
+  }, [data, hours])
+  const fxStart = rows.find(r => r.fx)?.hours
+  const lastHour = rows.at(-1)?.hours ?? 10
+  const here = view ? { risk: view.afterRisk, gpa: Math.round(view.afterGpa * 100) / 100 } : null
+
   return (
     <article className="card mon-card">
       <header className="group-head"><h2>AI impact simulation</h2><span>What if I skip…</span></header>
@@ -199,33 +211,46 @@ function Simulation({ api, token, courses }) {
         </label>
       </div>
       {error && <div className="alert-box alert-danger">{error}</div>}
-      {sim && (
+      {data?.course_cost && <p className="mon-cost">{costLine(data.course_cost, !course)}</p>}
+      {view && (
         <>
           <div className="mon-sim-result" aria-live="polite">
             <div>
               <small className="muted">Predicted GPA</small>
-              <div className="mon-sim-num">{sim.after.predicted_gpa.toFixed(1)} <span className={`mon-delta ${sim.gpa_change <= -0.05 ? 'down' : ''}`}>{signed(sim.gpa_change, 1)}</span></div>
-              <small className="muted">now {sim.before.predicted_gpa.toFixed(1)}</small>
+              <div className="mon-sim-num">{(Math.floor(view.afterGpa * 10 + 0.5) / 10).toFixed(1)} <span className={`mon-delta ${view.gpaChange <= -0.05 ? 'down' : ''}`}>{signed(view.gpaChange, 1)}</span></div>
+              <small className="muted">now {(Math.floor(view.beforeGpa * 10 + 0.5) / 10).toFixed(1)}</small>
             </div>
             <div>
               <small className="muted">Dropout risk</small>
-              <div className={`mon-sim-num tone-${riskTone(sim.after.risk_percent)}`}>{sim.after.risk_percent}% <span className={`mon-delta ${sim.risk_change > 0 ? 'down' : ''}`}>{signed(sim.risk_change, 0, '%')}</span></div>
-              <small className="muted">now {sim.before.risk_percent}%</small>
+              <div className={`mon-sim-num tone-${riskTone(view.afterRisk)}`}>{view.afterRisk}% <span className={`mon-delta ${view.riskChange > 0 ? 'down' : ''}`}>{signed(view.riskChange, 0, '%')}</span></div>
+              <small className="muted">now {view.beforeRisk}%</small>
             </div>
           </div>
-          <p className={`mon-sim-msg ${sim.fx_courses.length ? 'bad' : ''}`}>{sim.message}</p>
+          <p className={`mon-sim-msg ${view.fxCourses.length ? 'bad' : ''}`}>{view.message}</p>
           <div className="mon-chart" aria-label="Predicted GPA and risk by skipped hours">
-            <ResponsiveContainer width="100%" height={210}>
-              <LineChart data={rows} margin={{ top: 8, right: 12, bottom: 4, left: -8 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                <XAxis dataKey="hours" tick={{ fontSize: 11 }} label={{ value: 'Skipped class hours', position: 'insideBottom', offset: -2, fontSize: 11 }} height={36} />
-                <YAxis yAxisId="gpa" domain={[0, 4]} tick={{ fontSize: 11 }} width={34} />
-                <YAxis yAxisId="risk" orientation="right" domain={[0, 100]} tick={{ fontSize: 11 }} width={38} unit="%" />
-                <Tooltip />
-                <ReferenceLine yAxisId="gpa" x={sim.skipped_hours} stroke="var(--text-muted)" strokeDasharray="4 4" />
-                <Line yAxisId="gpa" type="monotone" dataKey="gpa" name="Predicted GPA" stroke="var(--accent)" strokeWidth={2.5} dot={false} />
-                <Line yAxisId="risk" type="monotone" dataKey="risk" name="Risk %" stroke="var(--danger)" strokeWidth={2.5} dot={false} />
-              </LineChart>
+            <ResponsiveContainer width="100%" height={230}>
+              <ComposedChart data={rows} margin={{ top: 10, right: 12, bottom: 4, left: -8 }}>
+                <defs>
+                  <linearGradient id="mon-risk-fill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="var(--danger)" stopOpacity={0.32} />
+                    <stop offset="100%" stopColor="var(--danger)" stopOpacity={0.02} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="var(--border)" />
+                <XAxis dataKey="hours" type="number" domain={[0, lastHour]} allowDecimals={false} tickLine={false} tick={{ fontSize: 11 }}
+                       label={{ value: 'Skipped class hours', position: 'insideBottom', offset: -2, fontSize: 11 }} height={36} />
+                <YAxis yAxisId="gpa" domain={[0, 4]} tickLine={false} axisLine={false} tick={{ fontSize: 11 }} width={34} />
+                <YAxis yAxisId="risk" orientation="right" domain={[0, 100]} tickLine={false} axisLine={false} tick={{ fontSize: 11 }} width={40} unit="%" />
+                {fxStart != null && <ReferenceArea yAxisId="gpa" x1={fxStart} x2={lastHour} fill="var(--danger)" fillOpacity={0.07}
+                                                   label={{ value: 'FX zone', position: 'insideTopRight', fontSize: 11, fill: 'var(--danger)' }} />}
+                <Tooltip isAnimationActive={false} labelFormatter={h => `${h} hour(s) missed`}
+                         formatter={(v, name) => (name === 'Risk' ? [`${v}%`, 'Risk'] : [Number(v).toFixed(2), 'Predicted GPA'])} />
+                <ReferenceLine yAxisId="gpa" x={Math.min(hours, lastHour)} stroke="var(--text-muted)" strokeDasharray="4 4" />
+                <Area yAxisId="risk" type="monotone" dataKey="risk" name="Risk" stroke="var(--danger)" strokeWidth={2.5} fill="url(#mon-risk-fill)" dot={false} isAnimationActive={false} />
+                <Line yAxisId="gpa" type="monotone" dataKey="gpa" name="Predicted GPA" stroke="var(--accent)" strokeWidth={2.5} dot={false} isAnimationActive={false} />
+                {here && <ReferenceDot yAxisId="risk" x={Math.min(hours, lastHour)} y={here.risk} r={5} fill="var(--danger)" stroke="var(--surface)" strokeWidth={2} ifOverflow="visible" />}
+                {here && <ReferenceDot yAxisId="gpa" x={Math.min(hours, lastHour)} y={here.gpa} r={5} fill="var(--accent)" stroke="var(--surface)" strokeWidth={2} ifOverflow="visible" />}
+              </ComposedChart>
             </ResponsiveContainer>
             <div className="mon-legend"><span><i style={{ background: 'var(--accent)' }} />Predicted GPA</span><span><i style={{ background: 'var(--danger)' }} />Risk %</span></div>
           </div>
