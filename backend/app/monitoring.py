@@ -145,7 +145,17 @@ def grade_features(scores: list[float], trend: Optional[float]) -> dict:
     return out
 
 
-PENDING_WEIGHT = 0.5      # a "Not submitted" hour counts as half an absence: it may still be marked absent
+PENDING_PRIOR_RATE = 0.15   # typical share of hours missed, used until a course has its own marked history
+PENDING_PRIOR_HOURS = 4     # how many marked hours that prior is worth
+
+
+def pending_weight(course: dict) -> float:
+    """Chance that one "Not submitted" hour ends up as an absence, from the course's own marked hours.
+
+    A teacher who marked 30 hours with 0 absences will most likely not turn the unmarked ones into absences, so
+    a flat half would punish a clean record. Few marked hours lean on the prior instead."""
+    marked = course["present"] + course["absent"] + course["permitted"]
+    return (course["absent"] + PENDING_PRIOR_RATE * PENDING_PRIOR_HOURS) / (marked + PENDING_PRIOR_HOURS)
 TERM_WEEKS = 15           # an SDU term is about 15 weeks: class hours / 15 = hours a week
 
 
@@ -158,7 +168,7 @@ def course_pressures(courses: list[dict]) -> list[float]:
     out = []
     for c in courses:
         limit = absence_limit(c["hours"])
-        used = c["absent"] + PENDING_WEIGHT * c["pending"]
+        used = c["absent"] + pending_weight(c) * c["pending"]
         out.append(round(min(used / limit if limit else (1.25 if used > 0 else 0.0), 1.25), 4))
     return out
 
@@ -214,7 +224,7 @@ def score(features: dict) -> dict:
             result["reasons"] = sorted([*result["reasons"], {
                 "feature": "attendance_pressure", "label": "Absence limit used", "value": used,
                 "impact": round(delta * 100, 1),
-                "text": f"You have used {used}% of the absences allowed before FX ('Not submitted' hours count as half)"}],
+                "text": f"You have used {used}% of the absences allowed before FX (unmarked 'Not submitted' hours count by your absence rate in that course)"}],
                 key=lambda r: -r["impact"])[:3]
         if pressure >= 0.3:
             result["helping"] = [h for h in result["helping"] if h["feature"] not in ("attendance_pct", "max_absence_pct", "absent_hours")]

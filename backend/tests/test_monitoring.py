@@ -306,10 +306,14 @@ def test_skipping_classes_moves_risk_and_gpa_well_before_the_fx_limit():
     assert len({round(r, 2) for r in risks[:8]}) == 8                                   # rises step by step, not flat then a jump
 
 
-def test_not_submitted_hours_count_as_half_an_absence_in_the_pressure():
-    absent = [{**ONE_COURSE[0], "absent": 3}]
-    pending = [{**ONE_COURSE[0], "pending": 6}]
-    assert mon.attendance_pressure(absent) == mon.attendance_pressure(pending) == pytest.approx(3 / 8, abs=1e-3)
+def test_not_submitted_hours_count_by_the_courses_own_absence_rate():
+    pending = [{**ONE_COURSE[0], "pending": 6}]                                       # 14 present, 0 absent: clean record
+    assert mon.pending_weight(pending[0]) == pytest.approx(0.6 / 18, abs=1e-4)
+    assert mon.attendance_pressure(pending) < 0.05                                    # not 6 x 0.5 = 3 absences
+    unmarked = [{**ONE_COURSE[0], "present": 0, "pending": 30, "hours": 30}]          # nothing marked: prior only
+    assert mon.pending_weight(unmarked[0]) == pytest.approx(0.15)
+    leaky = [{**ONE_COURSE[0], "present": 6, "absent": 6, "pending": 6}]              # half the marked hours missed
+    assert mon.pending_weight(leaky[0]) == pytest.approx(6.6 / 16, abs=1e-4)
     assert mon.score(mon.build_features(pending, [75], 0, 0, 2.67))["risk"] > mon.score(mon.build_features(ONE_COURSE, [75], 0, 0, 2.67))["risk"]
 
 
