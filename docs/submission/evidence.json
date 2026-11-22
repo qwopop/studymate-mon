@@ -1,0 +1,1427 @@
+{
+ "backend": {
+  "passed": 248,
+  "failed": 0,
+  "seconds": 27.17,
+  "coverage_total": 84,
+  "statements": 5410,
+  "missed": 854,
+  "modules": [
+   [
+    "app/__init__.py",
+    10,
+    3,
+    "70%"
+   ],
+   [
+    "app/academics.py",
+    140,
+    1,
+    "99%"
+   ],
+   [
+    "app/admin.py",
+    150,
+    30,
+    "80%"
+   ],
+   [
+    "app/db.py",
+    111,
+    45,
+    "59%"
+   ],
+   [
+    "app/deadlines.py",
+    88,
+    10,
+    "89%"
+   ],
+   [
+    "app/goals.py",
+    433,
+    11,
+    "97%"
+   ],
+   [
+    "app/main.py",
+    1602,
+    292,
+    "82%"
+   ],
+   [
+    "app/ml/__init__.py",
+    0,
+    0,
+    "100%"
+   ],
+   [
+    "app/ml/dataset.py",
+    31,
+    0,
+    "100%"
+   ],
+   [
+    "app/ml/features.py",
+    71,
+    8,
+    "89%"
+   ],
+   [
+    "app/ml/model.py",
+    101,
+    16,
+    "84%"
+   ],
+   [
+    "app/ml/public_data.py",
+    62,
+    31,
+    "50%"
+   ],
+   [
+    "app/ml/tracking.py",
+    28,
+    22,
+    "21%"
+   ],
+   [
+    "app/ml/train.py",
+    95,
+    27,
+    "72%"
+   ],
+   [
+    "app/monitoring.py",
+    216,
+    9,
+    "96%"
+   ],
+   [
+    "app/monitoring_api.py",
+    223,
+    32,
+    "86%"
+   ],
+   [
+    "app/monitoring_store.py",
+    77,
+    0,
+    "100%"
+   ],
+   [
+    "app/moodle_calendar.py",
+    95,
+    23,
+    "76%"
+   ],
+   [
+    "app/notify.py",
+    60,
+    8,
+    "87%"
+   ],
+   [
+    "app/pms_portal.py",
+    290,
+    59,
+    "80%"
+   ],
+   [
+    "app/repository.py",
+    834,
+    110,
+    "87%"
+   ],
+   [
+    "app/sdu_client.py",
+    91,
+    40,
+    "56%"
+   ],
+   [
+    "app/sdu_mock.py",
+    85,
+    22,
+    "74%"
+   ],
+   [
+    "app/sdu_portal.py",
+    368,
+    45,
+    "88%"
+   ],
+   [
+    "app/summaries.py",
+    136,
+    10,
+    "93%"
+   ],
+   [
+    "app/syllabi.py",
+    13,
+    0,
+    "100%"
+   ]
+  ],
+  "per_file": {
+   "test_academics": 25,
+   "test_acceptance": 24,
+   "test_api": 80,
+   "test_db_translate": 7,
+   "test_goals": 39,
+   "test_monitoring": 39,
+   "test_moodle_calendar": 2,
+   "test_pms_portal": 6,
+   "test_portal": 12,
+   "test_summaries": 14
+  },
+  "cases": [
+   {
+    "file": "test_academics",
+    "name": "test_comparison_average_skips_missing_scores",
+    "status": "passed"
+   },
+   {
+    "file": "test_academics",
+    "name": "test_strengths_are_top_two_above_85_strongest_first",
+    "status": "passed"
+   },
+   {
+    "file": "test_academics",
+    "name": "test_strengths_are_never_padded",
+    "status": "passed"
+   },
+   {
+    "file": "test_academics",
+    "name": "test_insights_include_average_strengths_and_resources",
+    "status": "passed"
+   },
+   {
+    "file": "test_academics",
+    "name": "test_resources_match_specific_subjects_before_broad_ones",
+    "status": "passed"
+   },
+   {
+    "file": "test_academics",
+    "name": "test_resources_fall_back_to_search_and_include_the_weak_topic",
+    "status": "passed"
+   },
+   {
+    "file": "test_academics",
+    "name": "test_forecast_needs_a_breakdown",
+    "status": "passed"
+   },
+   {
+    "file": "test_academics",
+    "name": "test_forecast_waits_for_70_percent_of_the_coursework",
+    "status": "passed"
+   },
+   {
+    "file": "test_academics",
+    "name": "test_forecast_projects_letter_and_interval",
+    "status": "passed"
+   },
+   {
+    "file": "test_academics",
+    "name": "test_forecast_interval_narrows_as_more_is_graded",
+    "status": "passed"
+   },
+   {
+    "file": "test_academics",
+    "name": "test_forecast_of_a_fully_graded_course_is_final",
+    "status": "passed"
+   },
+   {
+    "file": "test_academics",
+    "name": "test_forecast_endpoint_reports_each_current_course",
+    "status": "passed"
+   },
+   {
+    "file": "test_academics",
+    "name": "test_forecast_uses_the_breakdown_saved_in_the_whatif_planner",
+    "status": "passed"
+   },
+   {
+    "file": "test_academics",
+    "name": "test_required_score_follows_the_sdu_step_scale",
+    "status": "passed"
+   },
+   {
+    "file": "test_academics",
+    "name": "test_goal_progress_is_current_over_target_capped_at_100",
+    "status": "passed"
+   },
+   {
+    "file": "test_academics",
+    "name": "test_goal_progress_without_goal_or_grades_stays_empty",
+    "status": "passed"
+   },
+   {
+    "file": "test_academics",
+    "name": "test_goals_are_saved_and_tracked_per_student",
+    "status": "passed"
+   },
+   {
+    "file": "test_academics",
+    "name": "test_goal_input_is_validated",
+    "status": "passed"
+   },
+   {
+    "file": "test_academics",
+    "name": "test_goals_require_a_student",
+    "status": "passed"
+   },
+   {
+    "file": "test_academics",
+    "name": "test_saved_goal_round_trips_through_json",
+    "status": "passed"
+   },
+   {
+    "file": "test_academics",
+    "name": "test_goals_still_load_and_save_after_a_targeted_course_disappears",
+    "status": "passed"
+   },
+   {
+    "file": "test_academics",
+    "name": "test_transcript_gpa_matches_the_overview_rule",
+    "status": "passed"
+   },
+   {
+    "file": "test_academics",
+    "name": "test_transcript_current_term_only_while_in_progress",
+    "status": "passed"
+   },
+   {
+    "file": "test_academics",
+    "name": "test_goals_show_ungraded_sdu_courses_and_cumulative_gpa",
+    "status": "passed"
+   },
+   {
+    "file": "test_academics",
+    "name": "test_insights_keep_letter_only_courses_and_skip_pass_fail",
+    "status": "passed"
+   },
+   {
+    "file": "test_acceptance",
+    "name": "test_US22_student_signs_in_and_syncs_sdu_data",
+    "status": "passed"
+   },
+   {
+    "file": "test_acceptance",
+    "name": "test_US22_requests_without_a_login_are_refused_and_roles_are_kept_apart",
+    "status": "passed"
+   },
+   {
+    "file": "test_acceptance",
+    "name": "test_US05_student_gets_alerts_and_can_mark_them_read",
+    "status": "passed"
+   },
+   {
+    "file": "test_acceptance",
+    "name": "test_US06_US14_courses_are_ranked_weakest_first_and_weak_ones_flagged",
+    "status": "passed"
+   },
+   {
+    "file": "test_acceptance",
+    "name": "test_US15_strengths_are_the_courses_above_the_strength_threshold",
+    "status": "passed"
+   },
+   {
+    "file": "test_acceptance",
+    "name": "test_US06_the_failing_course_is_flagged_as_weak",
+    "status": "passed"
+   },
+   {
+    "file": "test_acceptance",
+    "name": "test_US07_study_plan_has_concrete_tasks_that_can_be_ticked_off",
+    "status": "passed"
+   },
+   {
+    "file": "test_acceptance",
+    "name": "test_US16_study_resources_are_offered_for_a_weak_course",
+    "status": "passed"
+   },
+   {
+    "file": "test_acceptance",
+    "name": "test_US09_attendance_of_the_previous_semester_can_be_opened",
+    "status": "passed"
+   },
+   {
+    "file": "test_acceptance",
+    "name": "test_US10_grade_breakdown_shows_each_assessment_of_a_course",
+    "status": "passed"
+   },
+   {
+    "file": "test_acceptance",
+    "name": "test_US12_US13_upcoming_and_overdue_deadlines_are_listed",
+    "status": "passed"
+   },
+   {
+    "file": "test_acceptance",
+    "name": "test_US17_final_grade_forecast_is_given_per_course_with_a_status",
+    "status": "passed"
+   },
+   {
+    "file": "test_acceptance",
+    "name": "test_US18_US19_goals_are_saved_and_checked_for_feasibility",
+    "status": "passed"
+   },
+   {
+    "file": "test_acceptance",
+    "name": "test_US20_US21_weekly_and_monthly_progress_summaries[week]",
+    "status": "passed"
+   },
+   {
+    "file": "test_acceptance",
+    "name": "test_US20_US21_weekly_and_monthly_progress_summaries[month]",
+    "status": "passed"
+   },
+   {
+    "file": "test_acceptance",
+    "name": "test_US23_ai_risk_is_scored_and_explained",
+    "status": "passed"
+   },
+   {
+    "file": "test_acceptance",
+    "name": "test_US24_safe_to_skip_shows_how_many_classes_can_still_be_missed",
+    "status": "passed"
+   },
+   {
+    "file": "test_acceptance",
+    "name": "test_US25_skipping_more_classes_never_improves_the_outcome",
+    "status": "passed"
+   },
+   {
+    "file": "test_acceptance",
+    "name": "test_US25_a_missed_hour_costs_more_in_a_course_with_fewer_weekly_lessons",
+    "status": "passed"
+   },
+   {
+    "file": "test_acceptance",
+    "name": "test_US26_alert_feed_lists_warnings_most_severe_first",
+    "status": "passed"
+   },
+   {
+    "file": "test_acceptance",
+    "name": "test_US27_high_risk_sends_one_e_mail_to_the_student_and_one_to_the_curator",
+    "status": "passed"
+   },
+   {
+    "file": "test_acceptance",
+    "name": "test_T1_teacher_sees_only_their_students_with_risk_factors",
+    "status": "passed"
+   },
+   {
+    "file": "test_acceptance",
+    "name": "test_T2_teacher_records_an_intervention_and_it_appears_in_the_history",
+    "status": "passed"
+   },
+   {
+    "file": "test_acceptance",
+    "name": "test_T3_teacher_sees_how_attendance_relates_to_performance",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_invalid_login_is_generic",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_student_dashboard_is_scoped_and_calculated",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_student_cannot_open_teacher_area",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_teacher_scope_hides_unknown_student",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_teacher_analytics_explains_correlation",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_sdu_student_240103120_login",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_direct_reset_password_endpoint_is_blocked",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_teacher_intervention_flow",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_user_self_registration_flow",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_public_registration_cannot_escalate_to_teacher",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_6_digit_code_reset_flow",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_profile_name_update",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_reset_code_flow_user_118",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_reset_code_flow_friend_188",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_sdu_authorize_url_generation",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_sdu_successful_callback_and_data_sync",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_sdu_callback_denial",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_sdu_callback_wrong_or_missing_state",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_sdu_callback_replayed_and_expired_attempt",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_sdu_callback_wrong_pkce_verifier",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_sdu_token_expiry_and_revocation",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_sdu_missing_scopes",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_two_local_users_isolated_sdu_tokens",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_sdu_live_endpoints_profile_schedule_transcript",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_sdu_live_endpoints_error_handling_409_502_504",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_schedule_served_from_last_sync_when_sdu_times_out",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_schedule_409_uses_cache_and_never_fakes_data",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_empty_default_schedule_retries_active_term",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_active_term_retry_accepts_a_bare_list",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_empty_schedule_without_cache_stays_empty",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_schedule_items_without_day_are_logged_by_key_name",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_sync_keeps_last_good_schedule",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_disconnect_clears_cached_schedule",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_sdu_availability",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_sdu_demo_mode_flow",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_sdu_created_account_can_set_password_and_sign_in",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_set_password_requires_auth_and_min_length",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_admin_page_is_served",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_admin_login_disabled_without_env",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_admin_login_rejects_wrong_password",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_admin_can_list_users_and_set_password",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_admin_and_user_tokens_are_not_interchangeable",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_sdu_sync_notifies_only_about_real_changes",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_password_only_student_gets_no_demo_data",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_auto_sync_is_throttled",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_overall_attendance_alert_fires_once_below_70",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_insights_rank_weak_subjects_and_recalibrate",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_study_tasks_persist_and_tutoring_reaches_teacher",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_admin_deleted_accounts_stay_deleted_after_restart",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_support_ticket_requires_email_when_logged_out",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_support_ticket_rate_limit",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_support_ticket_privacy_and_admin_only",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_admin_reply_is_stored_emailed_and_notified",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_admin_reply_kept_when_email_fails",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_reset_code_is_emailed_once_per_minute_and_reused",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_reset_is_step_by_step_and_limits_wrong_codes",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_deadline_normalizer_accepts_common_moodle_shapes",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_moodle_errors_do_not_disconnect_sdu",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_demo_deadlines_next_7_days_and_missed_alert_once",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_missed_alert_needs_explicit_unsubmitted_flag",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_breakdown_lookup_by_course_name",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_sdu_short_message_reads_nested_errors",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_new_sdu_connection_resets_baseline",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_demo_mode_can_be_disabled",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_real_sync_uses_transcript_and_only_the_active_term",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_whatif_uses_stored_breakdown_for_seeded_course",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_whatif_with_own_components_works_for_in_progress_sdu_course",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_whatif_rejects_incomplete_or_inconsistent_components",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_whatif_template_uses_syllabus_preset_for_known_course",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_whatif_template_defaults_for_unknown_course",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_whatif_template_prefers_stored_breakdown_for_seeded_course",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_whatif_remembers_own_breakdown_per_user_and_course",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_whatif_does_not_save_rejected_breakdown",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_synced_sdu_grades_are_weighted_by_ects_like_the_official_transcript",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_term_shift_walks_back_through_sdu_terms",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_past_semester_attendance_asks_sdu_for_that_term",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_demo_attendance_for_a_past_semester_lists_that_semesters_courses",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_restart_keeps_sdu_data_even_without_seeded_css105_grades",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_expired_moodle_session_points_the_student_to_reconnect",
+    "status": "passed"
+   },
+   {
+    "file": "test_api",
+    "name": "test_api_docs_open_locally_and_hidden_in_production",
+    "status": "passed"
+   },
+   {
+    "file": "test_db_translate",
+    "name": "test_placeholders_and_literal_percent_signs",
+    "status": "passed"
+   },
+   {
+    "file": "test_db_translate",
+    "name": "test_case_insensitive_lookup_uses_lower_on_both_sides",
+    "status": "passed"
+   },
+   {
+    "file": "test_db_translate",
+    "name": "test_insert_or_ignore_becomes_on_conflict_do_nothing",
+    "status": "passed"
+   },
+   {
+    "file": "test_db_translate",
+    "name": "test_insert_or_replace_upserts_on_the_tables_primary_key",
+    "status": "passed"
+   },
+   {
+    "file": "test_db_translate",
+    "name": "test_group_concat_becomes_string_agg",
+    "status": "passed"
+   },
+   {
+    "file": "test_db_translate",
+    "name": "test_schema_uses_serial_ids_and_double_precision",
+    "status": "passed"
+   },
+   {
+    "file": "test_db_translate",
+    "name": "test_row_supports_names_positions_and_dict",
+    "status": "passed"
+   },
+   {
+    "file": "test_goals",
+    "name": "test_attendance_example_from_the_story",
+    "status": "passed"
+   },
+   {
+    "file": "test_goals",
+    "name": "test_attendance_recovery_counts_hours_that_can_still_be_missed",
+    "status": "passed"
+   },
+   {
+    "file": "test_goals",
+    "name": "test_excused_absences_are_not_absences",
+    "status": "passed"
+   },
+   {
+    "file": "test_goals",
+    "name": "test_zero_remaining_classes_is_the_final_result",
+    "status": "passed"
+   },
+   {
+    "file": "test_goals",
+    "name": "test_unknown_class_counts_never_invent_remaining_classes",
+    "status": "passed"
+   },
+   {
+    "file": "test_goals",
+    "name": "test_recorded_absences_alone_prove_a_target_impossible",
+    "status": "passed"
+   },
+   {
+    "file": "test_goals",
+    "name": "test_inconsistent_counts_are_not_trusted",
+    "status": "passed"
+   },
+   {
+    "file": "test_goals",
+    "name": "test_rounding_never_accepts_an_impossible_attendance_target",
+    "status": "passed"
+   },
+   {
+    "file": "test_goals",
+    "name": "test_overall_attendance_uses_the_official_mean_of_course_percentages",
+    "status": "passed"
+   },
+   {
+    "file": "test_goals",
+    "name": "test_required_final_exam_score_example",
+    "status": "passed"
+   },
+   {
+    "file": "test_goals",
+    "name": "test_impossible_course_target_reports_the_maximum",
+    "status": "passed"
+   },
+   {
+    "file": "test_goals",
+    "name": "test_ungraded_is_not_zero_and_zero_is_not_ungraded",
+    "status": "passed"
+   },
+   {
+    "file": "test_goals",
+    "name": "test_different_weighting_systems",
+    "status": "passed"
+   },
+   {
+    "file": "test_goals",
+    "name": "test_several_remaining_assessments_show_each_minimum",
+    "status": "passed"
+   },
+   {
+    "file": "test_goals",
+    "name": "test_dropped_lowest_quiz_and_curve_policies",
+    "status": "passed"
+   },
+   {
+    "file": "test_goals",
+    "name": "test_secured_and_final_course_goals",
+    "status": "passed"
+   },
+   {
+    "file": "test_goals",
+    "name": "test_missing_weights_are_insufficient_data",
+    "status": "passed"
+   },
+   {
+    "file": "test_goals",
+    "name": "test_course_rounding_boundary",
+    "status": "passed"
+   },
+   {
+    "file": "test_goals",
+    "name": "test_semester_and_cumulative_gpa_are_different_goals",
+    "status": "passed"
+   },
+   {
+    "file": "test_goals",
+    "name": "test_gpa_without_breakdowns_is_a_range_not_a_guess",
+    "status": "passed"
+   },
+   {
+    "file": "test_goals",
+    "name": "test_cumulative_gpa_without_transcript_is_insufficient",
+    "status": "passed"
+   },
+   {
+    "file": "test_goals",
+    "name": "test_gpa_achieved_when_it_cannot_fall_below_target",
+    "status": "passed"
+   },
+   {
+    "file": "test_goals",
+    "name": "test_valid_goals_are_saved_and_survive_a_new_login",
+    "status": "passed"
+   },
+   {
+    "file": "test_goals",
+    "name": "test_impossible_course_target_is_rejected_and_valid_ones_still_save",
+    "status": "passed"
+   },
+   {
+    "file": "test_goals",
+    "name": "test_impossible_gpa_target_is_rejected_on_the_backend",
+    "status": "passed"
+   },
+   {
+    "file": "test_goals",
+    "name": "test_gpa_goal_is_always_the_cumulative_gpa",
+    "status": "passed"
+   },
+   {
+    "file": "test_goals",
+    "name": "test_unverifiable_targets_are_saved_with_a_warning",
+    "status": "passed"
+   },
+   {
+    "file": "test_goals",
+    "name": "test_impossible_attendance_target_is_rejected_with_the_sdu_journal",
+    "status": "passed"
+   },
+   {
+    "file": "test_goals",
+    "name": "test_sync_keeps_sdu_breakdown_and_class_hours",
+    "status": "passed"
+   },
+   {
+    "file": "test_goals",
+    "name": "test_goal_becomes_unachievable_after_new_results_and_alerts_once",
+    "status": "passed"
+   },
+   {
+    "file": "test_goals",
+    "name": "test_behind_pace_comes_with_a_concrete_recommendation",
+    "status": "passed"
+   },
+   {
+    "file": "test_goals",
+    "name": "test_goals_are_private_to_the_student",
+    "status": "passed"
+   },
+   {
+    "file": "test_goals",
+    "name": "test_gpa_advice_uses_the_students_own_course_targets",
+    "status": "passed"
+   },
+   {
+    "file": "test_goals",
+    "name": "test_no_high_score_alert_when_nothing_is_graded_yet",
+    "status": "passed"
+   },
+   {
+    "file": "test_goals",
+    "name": "test_planner_suggests_grades_that_reach_the_gpa_from_current_scores",
+    "status": "passed"
+   },
+   {
+    "file": "test_goals",
+    "name": "test_planner_respects_finished_courses_caps_and_impossible_targets",
+    "status": "passed"
+   },
+   {
+    "file": "test_goals",
+    "name": "test_plan_endpoint_saves_nothing",
+    "status": "passed"
+   },
+   {
+    "file": "test_goals",
+    "name": "test_whatif_template_starts_from_sdu_breakdown_and_saves_a_scenario",
+    "status": "passed"
+   },
+   {
+    "file": "test_goals",
+    "name": "test_whatif_template_must_add_up_to_100",
+    "status": "passed"
+   },
+   {
+    "file": "test_monitoring",
+    "name": "test_parser_keeps_not_submitted_hours_as_pending_not_absent",
+    "status": "passed"
+   },
+   {
+    "file": "test_monitoring",
+    "name": "test_attendance_log_roundtrip_stores_pending_and_replaces_on_resync",
+    "status": "passed"
+   },
+   {
+    "file": "test_monitoring",
+    "name": "test_synthetic_dataset_follows_sdu_rules",
+    "status": "passed"
+   },
+   {
+    "file": "test_monitoring",
+    "name": "test_model_is_accurate_and_explains_with_shap",
+    "status": "passed"
+   },
+   {
+    "file": "test_monitoring",
+    "name": "test_reaching_the_absence_limit_is_always_high_risk",
+    "status": "passed"
+   },
+   {
+    "file": "test_monitoring",
+    "name": "test_safe_to_skip_counts_hours_before_fx_and_flags_pending",
+    "status": "passed"
+   },
+   {
+    "file": "test_monitoring",
+    "name": "test_alert_warns_about_not_submitted_hours",
+    "status": "passed"
+   },
+   {
+    "file": "test_monitoring",
+    "name": "test_simulation_skipping_more_lowers_gpa_and_raises_risk",
+    "status": "passed"
+   },
+   {
+    "file": "test_monitoring",
+    "name": "test_predict_risk_returns_risk_and_three_reasons",
+    "status": "passed"
+   },
+   {
+    "file": "test_monitoring",
+    "name": "test_simulate_endpoint",
+    "status": "passed"
+   },
+   {
+    "file": "test_monitoring",
+    "name": "test_overview_has_every_block",
+    "status": "passed"
+   },
+   {
+    "file": "test_monitoring",
+    "name": "test_monitoring_is_student_only_and_needs_login",
+    "status": "passed"
+   },
+   {
+    "file": "test_monitoring",
+    "name": "test_teacher_sees_risk_per_student_in_scope",
+    "status": "passed"
+   },
+   {
+    "file": "test_monitoring",
+    "name": "test_curator_email_roundtrip",
+    "status": "passed"
+   },
+   {
+    "file": "test_monitoring",
+    "name": "test_high_risk_sends_email_to_student_and_curator_once",
+    "status": "passed"
+   },
+   {
+    "file": "test_monitoring",
+    "name": "test_low_risk_sends_nothing",
+    "status": "passed"
+   },
+   {
+    "file": "test_monitoring",
+    "name": "test_resend_without_key_does_not_touch_the_network",
+    "status": "passed"
+   },
+   {
+    "file": "test_monitoring",
+    "name": "test_forecast_endpoint_lists_hardest_subjects_first",
+    "status": "passed"
+   },
+   {
+    "file": "test_monitoring",
+    "name": "test_predicted_gpa_starts_from_the_real_gpa_and_only_adds_risk_effects",
+    "status": "passed"
+   },
+   {
+    "file": "test_monitoring",
+    "name": "test_simulation_curve_never_improves_when_skipping_more",
+    "status": "passed"
+   },
+   {
+    "file": "test_monitoring",
+    "name": "test_risk_is_explained_in_words_for_low_and_high_risk",
+    "status": "passed"
+   },
+   {
+    "file": "test_monitoring",
+    "name": "test_training_on_a_real_data_csv_and_rejecting_bad_files",
+    "status": "passed"
+   },
+   {
+    "file": "test_monitoring",
+    "name": "test_public_data_rows_become_model_factors",
+    "status": "passed"
+   },
+   {
+    "file": "test_monitoring",
+    "name": "test_saved_model_was_trained_on_real_students",
+    "status": "passed"
+   },
+   {
+    "file": "test_monitoring",
+    "name": "test_env_file_is_loaded_but_never_overrides_real_variables",
+    "status": "passed"
+   },
+   {
+    "file": "test_monitoring",
+    "name": "test_model_warm_up_runs_in_the_background_and_never_raises",
+    "status": "passed"
+   },
+   {
+    "file": "test_monitoring",
+    "name": "test_skipping_classes_moves_risk_and_gpa_well_before_the_fx_limit",
+    "status": "passed"
+   },
+   {
+    "file": "test_monitoring",
+    "name": "test_not_submitted_hours_count_as_half_an_absence_in_the_pressure",
+    "status": "passed"
+   },
+   {
+    "file": "test_monitoring",
+    "name": "test_absence_pressure_is_named_as_a_reason_for_the_risk",
+    "status": "passed"
+   },
+   {
+    "file": "test_monitoring",
+    "name": "test_simulation_message_rounds_gpa_half_up_like_the_screen",
+    "status": "passed"
+   },
+   {
+    "file": "test_monitoring",
+    "name": "test_email_goes_through_resend_when_a_key_is_set",
+    "status": "passed"
+   },
+   {
+    "file": "test_monitoring",
+    "name": "test_email_without_any_service_says_what_to_do",
+    "status": "passed"
+   },
+   {
+    "file": "test_monitoring",
+    "name": "test_resend_test_sender_restriction_is_explained",
+    "status": "passed"
+   },
+   {
+    "file": "test_monitoring",
+    "name": "test_batched_predictions_match_the_single_ones",
+    "status": "passed"
+   },
+   {
+    "file": "test_monitoring",
+    "name": "test_one_missed_hour_costs_more_in_a_course_with_fewer_weekly_lessons",
+    "status": "passed"
+   },
+   {
+    "file": "test_monitoring",
+    "name": "test_simulation_curve_length_follows_max_hours_and_names_fx_courses",
+    "status": "passed"
+   },
+   {
+    "file": "test_monitoring",
+    "name": "test_simulate_endpoint_accepts_max_hours",
+    "status": "passed"
+   },
+   {
+    "file": "test_monitoring",
+    "name": "test_absences_in_several_courses_add_up_but_the_worst_course_counts_most",
+    "status": "passed"
+   },
+   {
+    "file": "test_monitoring",
+    "name": "test_a_missed_hour_in_any_course_moves_the_overall_risk_at_once",
+    "status": "passed"
+   },
+   {
+    "file": "test_moodle_calendar",
+    "name": "test_moodle_login_reads_live_action_events",
+    "status": "passed"
+   },
+   {
+    "file": "test_moodle_calendar",
+    "name": "test_connect_moodle_credentials_shows_deadline_and_stores_only_cookie",
+    "status": "passed"
+   },
+   {
+    "file": "test_pms_portal",
+    "name": "test_pms_login_config_and_disable_flag",
+    "status": "passed"
+   },
+   {
+    "file": "test_pms_portal",
+    "name": "test_pms_teacher_sign_in_with_2fa_creates_teacher_and_syncs_students",
+    "status": "passed"
+   },
+   {
+    "file": "test_pms_portal",
+    "name": "test_pms_resend_code_and_direct_login_without_2fa",
+    "status": "passed"
+   },
+   {
+    "file": "test_pms_portal",
+    "name": "test_pms_wrong_password_and_code_return_400_and_local_fallback_works",
+    "status": "passed"
+   },
+   {
+    "file": "test_pms_portal",
+    "name": "test_pms_sync_refreshes_expired_access_token_and_disconnect_skips_oauth",
+    "status": "passed"
+   },
+   {
+    "file": "test_pms_portal",
+    "name": "test_mock_teacher_demo_login_populates_roster_analytics_and_student_detail",
+    "status": "passed"
+   },
+   {
+    "file": "test_portal",
+    "name": "test_portal_login_is_on_by_default_and_can_be_turned_off",
+    "status": "passed"
+   },
+   {
+    "file": "test_portal",
+    "name": "test_portal_sign_in_with_emailed_code_creates_an_sdu_user",
+    "status": "passed"
+   },
+   {
+    "file": "test_portal",
+    "name": "test_a_studymate_password_signs_in_through_the_same_form_without_the_portal",
+    "status": "passed"
+   },
+   {
+    "file": "test_portal",
+    "name": "test_wrong_password_and_wrong_code_are_rejected",
+    "status": "passed"
+   },
+   {
+    "file": "test_portal",
+    "name": "test_portal_data_reaches_the_app_in_api_sdu_shapes",
+    "status": "passed"
+   },
+   {
+    "file": "test_portal",
+    "name": "test_attendance_falls_back_to_grades_when_the_journal_page_has_no_rows",
+    "status": "passed"
+   },
+   {
+    "file": "test_portal",
+    "name": "test_a_trusted_device_skips_the_code_on_the_next_sign_in",
+    "status": "passed"
+   },
+   {
+    "file": "test_portal",
+    "name": "test_expired_portal_session_asks_to_reconnect_and_disconnect_skips_api_sdu",
+    "status": "passed"
+   },
+   {
+    "file": "test_portal",
+    "name": "test_attendance_hours_come_from_each_course_journal",
+    "status": "passed"
+   },
+   {
+    "file": "test_portal",
+    "name": "test_course_journal_counts_without_the_chart_input",
+    "status": "passed"
+   },
+   {
+    "file": "test_portal",
+    "name": "test_journal_hours_make_attendance_goals_exact",
+    "status": "passed"
+   },
+   {
+    "file": "test_portal",
+    "name": "test_sdu_password_is_found_nowhere_in_the_database",
+    "status": "passed"
+   },
+   {
+    "file": "test_summaries",
+    "name": "test_one_point_per_day_latest_wins",
+    "status": "passed"
+   },
+   {
+    "file": "test_summaries",
+    "name": "test_weekly_attendance_counts_hours_held_this_week",
+    "status": "passed"
+   },
+   {
+    "file": "test_summaries",
+    "name": "test_week_over_week_comparison",
+    "status": "passed"
+   },
+   {
+    "file": "test_summaries",
+    "name": "test_holiday_week_with_zero_classes_does_not_break",
+    "status": "passed"
+   },
+   {
+    "file": "test_summaries",
+    "name": "test_without_an_earlier_point_no_trend_is_invented",
+    "status": "passed"
+   },
+   {
+    "file": "test_summaries",
+    "name": "test_new_marks_are_assessments_graded_in_the_period",
+    "status": "passed"
+   },
+   {
+    "file": "test_summaries",
+    "name": "test_grade_notifications_are_used_when_there_is_no_breakdown",
+    "status": "passed"
+   },
+   {
+    "file": "test_summaries",
+    "name": "test_deadlines_preview_and_missed_in_month",
+    "status": "passed"
+   },
+   {
+    "file": "test_summaries",
+    "name": "test_monthly_compliance_warning_below_requirement",
+    "status": "passed"
+   },
+   {
+    "file": "test_summaries",
+    "name": "test_goals_and_milestones_in_the_monthly_summary",
+    "status": "passed"
+   },
+   {
+    "file": "test_summaries",
+    "name": "test_summary_endpoint_after_a_sync",
+    "status": "passed"
+   },
+   {
+    "file": "test_summaries",
+    "name": "test_monthly_archive_and_missing_month",
+    "status": "passed"
+   },
+   {
+    "file": "test_summaries",
+    "name": "test_summary_email_goes_to_the_student",
+    "status": "passed"
+   },
+   {
+    "file": "test_summaries",
+    "name": "test_summaries_are_for_students_only",
+    "status": "passed"
+   }
+  ]
+ },
+ "frontend": {
+  "unit": 29,
+  "component": 14,
+  "e2e": 4
+ }
+}

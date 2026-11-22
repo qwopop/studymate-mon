@@ -12,3 +12,6 @@ backend/data/public/
 # test output
 test-results/
 playwright-report/
+
+# generated while building the documentation
+docs/submission/__pycache__/
