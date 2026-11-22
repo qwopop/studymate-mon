@@ -855,7 +855,7 @@ function SduPortalForm({ token, onDone, onCancel, allowTeacher = !token }) {
         <small className="field-hint">Used once to sign in to {isTeacher ? 'pms.sdu.edu.kz' : 'my.sdu.edu.kz'}. StudyMate never stores it.</small>
       </div>
       {error && <div className="alert-box alert-danger"><Icons.AlertTriangle size={16} /><span>{error}</span></div>}
-      <button className="btn-submit-primary" disabled={busy}>
+      <button className="btn-submit-primary btn-glass" disabled={busy}>
         {busy ? (isTeacher ? 'Signing in to PMS…' : 'Signing in to SDU…') : (isTeacher ? 'Sign in as Teacher →' : 'Sign in with SDU →')}
       </button>
       {isTeacher && (
@@ -1254,7 +1254,7 @@ function Login({ onLogin, theme, toggleTheme }) {
                 </div>
               )}
 
-              <button className="btn-submit-primary" disabled={busy}>
+              <button className="btn-submit-primary btn-glass" disabled={busy}>
                 {busy ? (portalLogin && (isStudentNumber || isTeacherUsername) ? 'Signing in to SDU…' : 'Signing in…') : 'Sign in →'}
               </button>
             </form>
